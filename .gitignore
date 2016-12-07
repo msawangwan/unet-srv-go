@@ -1,0 +1,2 @@
+# ignore go binaries
+bin/*
