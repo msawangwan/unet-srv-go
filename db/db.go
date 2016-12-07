@@ -10,9 +10,10 @@ import (
 )
 
 const (
-	DB_USR  = "postgres"
-	DB_PW   = ""
-	DB_NAME = "unitywebservice"
+	kDB_DRIVER   = "postgres"
+	kDB_USER     = "postgres"
+	kDB_PASSWORD = "1234"
+	kDB_DATABASE = "unitywebservice"
 )
 
 var PostGreService *sql.DB
@@ -20,8 +21,14 @@ var PostGreService *sql.DB
 func init() {
 	var err error
 
-	connstr := fmt.Sprintf("user=%s password=%s host=localhost dbname=%s sslmode=disable", DB_USR, DB_PW, DB_NAME)
-	PostGreService, err = sql.Open("postgres", connstr)
+	connstr := fmt.Sprintf(
+		"user=%s password=%s dbname=%s sslmode=disable",
+		kDB_USER,
+		kDB_PASSWORD,
+		kDB_DATABASE,
+	)
+
+	PostGreService, err = sql.Open(kDB_DRIVER, connstr)
 
 	if err != nil {
 		log.Fatal(err)
