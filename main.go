@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/msawangwan/unitywebservice/db"
 	"github.com/msawangwan/unitywebservice/model"
-	//"github.com/msawangwan/unitywebservice/data"
 )
 
 var JSON = `{
@@ -12,16 +12,30 @@ var JSON = `{
 }`
 
 func main() {
-	var ss model.PlayerSaveState
-	err := json.Unmarshal([]byte(JSON), &ss)
+	var player model.Player
+	var players []model.Player
+	var err error
+
+	err = json.Unmarshal([]byte(JSON), &player)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	fmt.Println(ss)
-	var pp []model.PlayerProfile
-	pp, _ = model.GetPlayersTest()
-	for _, v := range pp {
-		fmt.Println(v.Name)
+
+	//	fmt.Printf("a single player %s\n", player)
+
+	players, err = model.SelectAllPlayers()
+	if err != nil {
+		fmt.Println(err)
 	}
+
+	for _, v := range players {
+		fmt.Printf("pname: %s\n", v.Name)
+		fmt.Printf("puuid: %s\n", v.UUID)
+		fmt.Printf("hash: %d\n", v.HashedGameState)
+		fmt.Printf("ptime: %v\n", v.DateCreated)
+		fmt.Printf("psave: %v\n", v.TimeOfLastSave)
+	}
+
+	fmt.Printf("a uuid: %s\n", db.CreateUUID())
 }
