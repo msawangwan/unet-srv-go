@@ -1,2 +1,5 @@
 # ignore go binaries
 bin/*
+
+# ignore vim swap files
+*.swp

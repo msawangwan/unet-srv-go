@@ -14,8 +14,6 @@ const (
 	kDB_DATABASE = "unitywebservice"
 )
 
-//var Service *sql.DB
-
 type postGreService struct {
 	DB *sql.DB
 	//logger *log.Logger
