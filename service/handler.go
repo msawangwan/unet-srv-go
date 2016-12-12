@@ -1,15 +1,14 @@
-//package service
-package main
+package service
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/msawangwan/unitywebservice/model"
-	"log"
+	//	"log"
 	"net/http"
 )
 
-func ValidateProfileIsAvailable(w http.ResponseWriter, r *http.Request) {
+func availability(w http.ResponseWriter, r *http.Request) {
 	var ps model.ProfileSearch
 
 	if r.Body == nil {
@@ -24,11 +23,11 @@ func ValidateProfileIsAvailable(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("we have %s and is available is %s\n", ps.Name, ps.IsAvailable)
+	fmt.Printf("need to verify %+v and is available is %+v\n", ps.Name, ps.IsAvailable)
 }
 
-func main() {
-	http.HandleFunc("/ProfileSearch", ValidateProfileIsAvailable)
-	fmt.Printf("waiting\n")
-	log.Fatal(http.ListenAndServe(":8000", nil))
-}
+//func main() {
+//	http.HandleFunc("/ProfileSearch", ValidateProfileIsAvailable)
+//	fmt.Printf("waiting\n")
+//	log.Fatal(http.ListenAndServe(":8000", nil))
+//}
