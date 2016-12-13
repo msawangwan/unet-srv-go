@@ -1,26 +1,32 @@
 package model
 
-//import (
-//	"github.com/msawangwan/unitywebservice/db"
-//)
+import (
+	"github.com/msawangwan/unitywebservice/db"
+	"log"
+)
 
 type ProfileSearch struct {
 	Name        string `json: "name"`
 	IsAvailable bool   `json: "isAvailable"`
 }
 
-//func CheckAvailability(string name) (*ProfileSearch, error) {
-//	var ps *ProfileSearch = &ProfileSearch{
-//		Name:        name,
-//		IsAvailable: false,
-//	}
+func (ps *ProfileSearch) IsProfileNameAvailable() (bool, error) {
+	conn, err := db.Redis.DB.Get()
+	if err != nil {
+		return false, err
+	}
+	defer db.Redis.DB.Put(conn)
 
-//	conn, err := db.Redis.DB.Get()
-//	if err != nil {
-//		return ps, err
-//	}
-//	defer db.Redis.DB.Put(conn) // remember to return the connection
-//reply
+	var query int
 
-//	return ps, nil
-//}
+	query, err = conn.Cmd(db.CMD_SISMEM, db.K_NAMES_NOT_AVAIL, ps.Name).Int()
+	if err != nil {
+		return false, err
+	} else if query == 1 {
+		log.Printf("already have a profile with name: %s\n", ps.Name)
+		return false, nil
+	} else {
+		log.Printf("did not find a profile with name: %s\n", ps.Name)
+		return true, nil
+	}
+}

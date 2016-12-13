@@ -15,11 +15,12 @@ const (
 
 	VAL_INIT = "_init_"
 
-	CMD_EXIST  = "EXISTS"
-	CMD_S      = "SET"
-	CMD_G      = "GET"
-	CMD_SETADD = "SADD"
-	CMD_SETMEM = "SMEMBERS"
+	CMD_EXIST   = "EXISTS"
+	CMD_S       = "SET"
+	CMD_G       = "GET"
+	CMD_SADDMEM = "SADD"
+	CMD_SISMEM  = "SISMEMBER"
+	CMD_SETMEM  = "SMEMBERS"
 )
 
 type redisManager struct {
@@ -71,7 +72,7 @@ func (rm *redisManager) CreateNameDatabase() error {
 		}
 	}
 
-	if conn.Cmd(CMD_SETADD, K_NAMES_NOT_AVAIL, VAL_INIT).Err != nil {
+	if conn.Cmd(CMD_SADDMEM, K_NAMES_NOT_AVAIL, VAL_INIT).Err != nil {
 		return ErrOnInitDB
 	} else {
 		return nil
