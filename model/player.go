@@ -16,7 +16,7 @@ type Player struct {
 }
 
 func SelectAllPlayers() ([]Player, error) {
-	rows, err := db.PGSconn.DB.Query(
+	rows, err := db.Postgres.DB.Query(
 		"SELECT profile_name, profile_uuid, hashed_gamestate, date_created, timeof_lastsave FROM player ORDER BY date_created DESC",
 	)
 	defer rows.Close()

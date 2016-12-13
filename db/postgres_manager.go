@@ -14,12 +14,11 @@ const (
 	kDB_DATABASE = "unitywebservice"
 )
 
-type postGreService struct {
+type postgreManager struct {
 	DB *sql.DB
-	//logger *log.Logger
 }
 
-var PGSconn *postGreService
+var Postgres *postgreManager
 
 func init() {
 	var db *sql.DB
@@ -42,7 +41,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	PGSconn = &postGreService{
+	Postgres = &postgreManager{
 		DB: db,
 	}
 
