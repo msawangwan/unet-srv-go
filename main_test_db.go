@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/msawangwan/unitywebservice/db"
+	//	"github.com/msawangwan/unitywebservice/db"
 	"github.com/msawangwan/unitywebservice/model"
 )
 
@@ -37,5 +37,5 @@ func main() {
 		fmt.Printf("psave: %v\n", v.TimeOfLastSave)
 	}
 
-	fmt.Printf("a uuid: %s\n", db.CreateUUID())
+	//	fmt.Printf("a uuid: %s\n", db.CreateUUID())
 }

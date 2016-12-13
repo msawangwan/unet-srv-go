@@ -16,17 +16,22 @@ func init() {
 }
 
 func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("gateway attempt to match incoming request: %s\n", r.URL.Path)
+	var foundResource bool = false
+
 	for _, route := range Routes {
 		if route.Pattern.MatchString(r.URL.Path) == true {
-			log.Printf("matched pattern!\n")
 			if route.Method == r.Method {
-				log.Printf("found a match, serving the request\n")
+				foundResource = true
 				route.Handler(w, r)
-				return
+				break
 			}
 		}
 	}
-	log.Printf("failed to match on the requested resource\n")
-	http.NotFound(w, r)
+
+	if foundResource {
+		log.Printf("found a match, serving the request\n")
+	} else {
+		log.Printf("failed to match on the requested resource\n")
+		http.NotFound(w, r)
+	}
 }

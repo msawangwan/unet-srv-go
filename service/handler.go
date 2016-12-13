@@ -2,9 +2,8 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/msawangwan/unitywebservice/model"
-	//	"log"
+	"log"
 	"net/http"
 )
 
@@ -23,11 +22,5 @@ func availability(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("need to verify %+v and is available is %+v\n", ps.Name, ps.IsAvailable)
+	log.Printf("need to verify %+v and is available is %+v\n", ps.Name, ps.IsAvailable)
 }
-
-//func main() {
-//	http.HandleFunc("/ProfileSearch", ValidateProfileIsAvailable)
-//	fmt.Printf("waiting\n")
-//	log.Fatal(http.ListenAndServe(":8000", nil))
-//}
