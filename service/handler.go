@@ -17,13 +17,13 @@ func availability(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&ps)
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		http.Error(w, "error decoding json "+err.Error(), 400)
 		return
 	}
 
 	isUnique, err := ps.IsProfileNameAvailable()
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		http.Error(w, "error running the search "+err.Error(), 400)
 	} else {
 		if isUnique {
 			ps.IsAvailable = true
@@ -32,7 +32,7 @@ func availability(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode(ps)
+	json.NewEncoder(w).Encode(&ps)
 
 	log.Printf("responded to request with answer %v", isUnique)
 }

@@ -29,9 +29,9 @@ func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if foundResource {
-		log.Printf("found a match, serving the request\n")
+		log.Printf("found a match, serving the request: %s\n", r.URL.Path)
 	} else {
-		log.Printf("failed to match on the requested resource\n")
+		log.Printf("failed to match on the requested resource: %s\n", r.URL.Path)
 		http.NotFound(w, r)
 	}
 }
