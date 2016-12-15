@@ -22,6 +22,7 @@ var (
 routes:
 
 	POST api/availability -- is the profile name available for use?
+	POST api/profile/create -- create a new profile
 */
 
 func init() {
@@ -32,6 +33,11 @@ func init() {
 			Method:  "POST",
 			Pattern: Cache("api/availability"),
 			Handler: Log.resourceRequest(availability),
+		},
+		"profile_create": &route{
+			Method:  "POST",
+			Pattern: Cache("api/profile/create"),
+			Handler: Log.resourceRequest(profileCreate),
 		},
 	}
 
