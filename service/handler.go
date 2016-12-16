@@ -2,11 +2,11 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/msawangwan/unitywebservice/db"
 	"github.com/msawangwan/unitywebservice/model"
+	"github.com/msawangwan/unitywebservice/util"
+	//	"github.com/msawangwan/unitywebservice/db"
 	"log"
 	"net/http"
-	"time"
 )
 
 /* expects a 'starmap' struct */
@@ -24,26 +24,18 @@ func availability(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isUnique, err := ps.IsProfileNameAvailable()
+	_, err = ps.IsProfileNameAvailable()
 	if err != nil {
 		http.Error(w, "error running the search "+err.Error(), 400)
-	} else {
-		if isUnique {
-			ps.IsAvailable = true
-		} else {
-			ps.IsAvailable = false
-		}
 	}
 
 	json.NewEncoder(w).Encode(&ps)
-
-	log.Printf("responded to request with answer %v", isUnique)
 }
 
 /* expects a 'name' struct */
 func profileCreate(w http.ResponseWriter, r *http.Request) {
 	if err := nilBodyErr(w, r); err != nil {
-		log.Printf("%v\n", err)
+		log.Printf("%v\n", err) // should log elsewyhere
 		return
 	}
 
@@ -52,27 +44,22 @@ func profileCreate(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&n)
 	if err != nil {
-		jsonDecodeErr(w, err)
+		jsonDecodeErr(w, err) // should log elsewhere
 		return
 	}
 
-	name := n.Text
-	uuid := db.CreateUUID()
-	t := time.Now()
-
-	profile = &model.Profile{
-		Name:        name,
-		UUID:        uuid,
-		DateCreated: t,
-	}
-
-	log.Printf("registering new player...\n")
-	result, err := db.Postgres.DB.Exec("INSERT INTO profile VALUES($1, $2, $3)", profile.Name, profile.UUID, profile.DateCreated)
+	profile, err = model.CreateNewProfile(n.Text)
 	if err != nil {
-		http.Error(w, http.StatusText(500), 500)
+		util.Log.DbErr(w, r, err)
 		return
 	}
-	log.Printf("success...%v\n", result)
+
+	err = profile.MarkNameAsNotAvailable()
+	if err != nil {
+		util.Log.DbErr(w, r, err)
+	} else {
+		util.Log.DbActivity("appended " + profile.Name + " to list of unavailable names")
+	}
 
 	json.NewEncoder(w).Encode(profile)
 }

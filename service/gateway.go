@@ -1,7 +1,7 @@
 package service
 
 import (
-	"log"
+	"github.com/msawangwan/unitywebservice/util"
 	"net/http"
 )
 
@@ -16,22 +16,19 @@ func init() {
 }
 
 func (g *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var foundResource bool = false
+	var servedResource bool = false
 
-	for _, route := range Routes {
+	for _, route := range Route.Endpoints {
 		if route.Pattern.MatchString(r.URL.Path) == true {
 			if route.Method == r.Method {
-				foundResource = true
+				servedResource = true
 				route.Handler(w, r)
 				break
 			}
 		}
 	}
 
-	if foundResource {
-		log.Printf("found a match, serving the request: %s\n", r.URL.Path)
-	} else {
-		log.Printf("failed to match on the requested resource: %s\n", r.URL.Path)
-		http.NotFound(w, r)
+	if !servedResource {
+		util.Log.InvalidRequest(w, r)
 	}
 }

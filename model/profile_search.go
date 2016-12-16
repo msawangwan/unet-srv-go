@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/msawangwan/unitywebservice/db"
-	"log"
+	"github.com/msawangwan/unitywebservice/util"
 )
 
 type ProfileSearch struct {
@@ -23,10 +23,12 @@ func (ps *ProfileSearch) IsProfileNameAvailable() (bool, error) {
 	if err != nil {
 		return false, err
 	} else if query == 1 {
-		log.Printf("already have a profile with name: %s\n", ps.Name)
+		util.Log.DbActivity("there's already a player named: " + ps.Name)
+		ps.IsAvailable = false
 		return false, nil
 	} else {
-		log.Printf("did not find a profile with name: %s\n", ps.Name)
+		util.Log.DbActivity("name is available for use: " + ps.Name)
+		ps.IsAvailable = true
 		return true, nil
 	}
 }

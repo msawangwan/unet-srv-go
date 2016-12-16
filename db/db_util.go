@@ -3,8 +3,15 @@ package db
 import (
 	"crypto/rand"
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"log"
+)
+
+/* global db errors */
+var (
+	ErrPreparedStatement error = errors.New("[db err][prepare] error attempting to create a prepared statement:")
+	ErrExecStatement     error = errors.New("[db err][exec] error attempting to execute a prepared statement:")
 )
 
 /* based on 'go wp', see: RFC 4122 */

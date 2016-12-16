@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"log"
+	//	"log"
+	"github.com/msawangwan/unitywebservice/util"
 )
 
 const (
@@ -34,16 +35,16 @@ func init() {
 	db, err = sql.Open(kDB_DRIVER, connstr)
 
 	if err != nil {
-		log.Fatal(err)
+		util.Log.Fatal(err)
 	}
 
 	if err = db.Ping(); err != nil {
-		log.Fatal(err)
+		util.Log.Fatal(err)
 	}
 
 	Postgres = &postgreManager{
 		DB: db,
 	}
 
-	log.Printf("[db][db.go][init db: success]\n")
+	util.Log.InitMessage("postgres ready ...")
 }

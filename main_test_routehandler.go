@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/msawangwan/unitywebservice/service"
+	"github.com/msawangwan/unitywebservice/util"
 	"log"
 	"net/http"
 )
 
 func main() {
-	log.Printf("test server, serving routes from 8080...\n")
-	//log.Fatal(http.ListenAndServe("8080", nil))
+	util.Log.InitMessage("test server running ...")
+	util.Log.InitMessage("listening on port 8080 ...")
 	log.Fatal(http.ListenAndServe(":8080", service.ServiceGateway))
 }

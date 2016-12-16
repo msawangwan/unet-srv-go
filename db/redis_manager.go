@@ -3,7 +3,8 @@ package db
 import (
 	"errors"
 	"github.com/mediocregopher/radix.v2/pool"
-	"log"
+	//"log"
+	"github.com/msawangwan/unitywebservice/util"
 )
 
 const (
@@ -36,7 +37,7 @@ func init() {
 	db, err = pool.New(CONN_TYPE, LADDR, CONN_SIZE)
 
 	if err != nil {
-		log.Panic(err)
+		util.Log.InitPanic(err)
 	}
 
 	Redis = &redisManager{
@@ -46,8 +47,10 @@ func init() {
 	err = Redis.CreateNameDatabase()
 
 	if err != nil {
-		log.Printf("non-fatal error when creating name db -- %v\n", err)
+		util.Log.InitMessage(err.Error())
 	}
+
+	util.Log.InitMessage("redis ready ...")
 }
 
 var (

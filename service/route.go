@@ -1,9 +1,10 @@
 package service
 
 import (
-	"log"
+	"github.com/msawangwan/unitywebservice/util"
 	"net/http"
 	"regexp"
+	"sync"
 )
 
 type route struct {
@@ -12,10 +13,13 @@ type route struct {
 	Handler http.HandlerFunc
 }
 
-type routeTable map[string]*route
+type routeTable struct {
+	Endpoints map[string]*route
+	sync.Mutex
+}
 
 var (
-	Routes routeTable
+	Route *routeTable
 )
 
 /*
@@ -26,22 +30,24 @@ routes:
 */
 
 func init() {
-	log.Printf("init route table ...\n")
+	util.Log.InitMessage("compiling routes ...")
 
-	Routes = map[string]*route{
-		"availability": &route{
-			Method:  "POST",
-			Pattern: Cache("api/availability"),
-			Handler: Log.resourceRequest(availability),
-		},
-		"profile_create": &route{
-			Method:  "POST",
-			Pattern: Cache("api/profile/create"),
-			Handler: Log.resourceRequest(profileCreate),
+	Route = &routeTable{
+		Endpoints: map[string]*route{
+			"availability": &route{
+				Method:  "POST",
+				Pattern: Cache("api/availability"),
+				Handler: util.Log.ResourceRequest(availability),
+			},
+			"profile_create": &route{
+				Method:  "POST",
+				Pattern: Cache("api/profile/create"),
+				Handler: util.Log.ResourceRequest(profileCreate),
+			},
 		},
 	}
 
-	log.Printf("route table init success ...\n")
+	util.Log.InitMessage("routes ready!")
 }
 
 func Cache(regex string) *regexp.Regexp {
