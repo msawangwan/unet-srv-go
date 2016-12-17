@@ -44,6 +44,11 @@ func init() {
 				Pattern: Cache("api/profile/create"),
 				Handler: util.Log.ResourceRequest(profileCreate),
 			},
+			"profile_world_gen": &route{
+				Method:  "POST",
+				Pattern: Cache("api/profile/world/stats"),
+				Handler: util.Log.ResourceRequest(profileWorldStats),
+			},
 		},
 	}
 

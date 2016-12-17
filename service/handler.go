@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/msawangwan/unitywebservice/model"
 	"github.com/msawangwan/unitywebservice/util"
-	//	"github.com/msawangwan/unitywebservice/db"
 	"log"
 	"net/http"
 )
@@ -39,6 +38,8 @@ func profileCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var gamestate *model.GameState
+	var starmap *model.StarMap
 	var profile *model.Profile
 	var n model.ProfileName
 
@@ -52,6 +53,8 @@ func profileCreate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		util.Log.DbErr(w, r, err)
 		return
+	} else {
+		util.Log.DbActivity("created a new profile with UUID " + profile.UUID + " and name of " + profile.Name)
 	}
 
 	err = profile.MarkNameAsNotAvailable()
@@ -61,32 +64,39 @@ func profileCreate(w http.ResponseWriter, r *http.Request) {
 		util.Log.DbActivity("appended " + profile.Name + " to list of unavailable names")
 	}
 
-	json.NewEncoder(w).Encode(profile)
+	starmap = model.NewMapDefaultParams(profile.Seed)
+	gamestate = model.NewGameState(profile, starmap)
+
+	log.Printf("new starmap created: %+v\n", starmap)
+
+	util.Log.DbActivity("new map created")
+
+	json.NewEncoder(w).Encode(gamestate)
 }
 
-/* expects a 'starmap' struct */
-func starMap(w http.ResponseWriter, r *http.Request) {
-	if r.Body == nil {
-		http.Error(w, "nil req body", 400)
-		return
-	}
+/* expects a '' struct */
+func profileWorldStats(w http.ResponseWriter, r *http.Request) {
+	//if r.Body == nil {
+	//	http.Error(w, "nil req body", 400)
+	//	return
+	//}
 
-	var sm model.StarMap
+	//var sm model.StarMap
 
-	err := json.NewDecoder(r.Body).Decode(&sm)
-	if err != nil {
-		http.Error(w, "error decoding json "+err.Error(), 400)
-		return
-	}
+	//err := json.NewDecoder(r.Body).Decode(&sm)
+	//if err != nil {
+	//	http.Error(w, "error decoding json "+err.Error(), 400)
+	//	return
+	//}
 
-	if sm.LoadExisting {
-		//sm.Seed = model.GenerateMapSeed()
-		log.Printf("NOT IMPLEMENTED\n")
-	} else {
-		sm.Seed = model.GenerateMapSeed()
-	}
+	//if sm.LoadExisting {
+	//sm.Seed = model.GenerateMapSeed()
+	//	log.Printf("NOT IMPLEMENTED\n")
+	//} else {
+	//	sm.Seed = model.GenerateWorldSeedValue()
+	//}
 
-	json.NewEncoder(w).Encode(&sm)
+	//json.NewEncoder(w).Encode(&sm)
 
-	log.Printf("responded to request with a new state seed: %+v\n", sm)
+	//log.Printf("responded to request with a new state seed: %+v\n", sm)
 }

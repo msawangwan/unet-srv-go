@@ -1,36 +1,27 @@
 package model
 
+const (
+	kSTAR_COUNT  = 30
+	kSTAR_RADIUS = 1.2
+	kWORLD_SCALE = 20.0
+	kDENSITY     = 1.5
+)
+
 type StarMap struct {
 	Seed         int64   `json:"seed"`
 	StarCount    int     `json:"starCount"`
+	StarRadius   float64 `json:"starRadius"`
 	Scale        float64 `json:"scale"`
 	Density      float64 `json:"density"`
 	LoadExisting bool    `json:"loadExisting"`
 }
 
-// see:
-// https://github.com/lordofduct/spacepuppy-unity-framework/blob/master/SpacepuppyBase/Utils/RandomUtil.cs
-
-// need:
-// random.insideUnitSphere() ... returns v2 unit vector
-//	func RandOnUnitSphere() {
-//	a:= rand.Next() * TWO_PI
-//	b := rand.Next() * TWO_PI
-//	sin := Mathf.Sin(a)
-//	return new Vector2(sin * mathf.Cos(b), sin * mathf.Sin(b), mathf.cos(a))
-//}
-
-//func randOnUnitCircle() {
-//	a := rng.Next() * TWO_PI
-//	return Vector2(mathf.sin(a), mathf.cos(b))
-//}
-
-//func insideUnitSphere() {
-//	return Randonunitsphere() * rng.Next()
-//}
-
-//func insideUnitCircle() {
-//	return randOnUnitCircle()
-//}
-
-// circlecast2d
+func NewMapDefaultParams(seed int64) *StarMap {
+	return &StarMap{
+		Seed:       seed,
+		StarCount:  kSTAR_COUNT,
+		StarRadius: kSTAR_RADIUS,
+		Scale:      kWORLD_SCALE,
+		Density:    kDENSITY,
+	}
+}
