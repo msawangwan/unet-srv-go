@@ -74,29 +74,24 @@ func profileCreate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(gamestate)
 }
 
-/* expects a '' struct */
-func profileWorldStats(w http.ResponseWriter, r *http.Request) {
-	//if r.Body == nil {
-	//	http.Error(w, "nil req body", 400)
-	//	return
-	//}
+/* expects a 'stardata' struct */
+func profileNewWorldData(w http.ResponseWriter, r *http.Request) {
+	if err := nilBodyErr(w, r); err != nil {
+		log.Printf("%v\n", err)
+		return
+	}
 
-	//var sm model.StarMap
+	var sd model.StarData
 
-	//err := json.NewDecoder(r.Body).Decode(&sm)
-	//if err != nil {
-	//	http.Error(w, "error decoding json "+err.Error(), 400)
-	//	return
-	//}
+	err := json.NewDecoder(r.Body).Decode(&sd)
+	if err != nil {
+		jsonDecodeErr(w, err)
+		return
+	}
 
-	//if sm.LoadExisting {
-	//sm.Seed = model.GenerateMapSeed()
-	//	log.Printf("NOT IMPLEMENTED\n")
-	//} else {
-	//	sm.Seed = model.GenerateWorldSeedValue()
-	//}
+	for _, v := range sd.Points {
+		log.Printf("%v\n", v)
+	}
 
-	//json.NewEncoder(w).Encode(&sm)
-
-	//log.Printf("responded to request with a new state seed: %+v\n", sm)
+	json.NewEncoder(w).Encode(&sd)
 }
