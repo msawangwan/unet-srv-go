@@ -116,4 +116,8 @@ func New(nodeCount int, nodeRadius float32) *tree {
 	}
 }
 
+func (t *tree) AddQuadrant(n *node, i int) {
+	t.Nodes[i] = n
+}
+
 func (t *tree) String() string { return fmt.Sprintf("quadrant tree root:\n\t%v\n", t.Root) } // TODO: range over children

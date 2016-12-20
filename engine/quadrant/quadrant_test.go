@@ -45,18 +45,18 @@ func TestPopulateQuadrantTree(t *testing.T) {
 		maxAllowed int = 30
 	)
 
-	t.Logf("%f %f", x, y)
-
 	for numCreated < cap(qt.Nodes) {
-		for i, v := range qt.Nodes {
+		for _, v := range qt.Nodes {
 			if v == nil {
 				t.Log("nil node, try to insert into the quadrant tree")
 				x = randInRange(minScale, maxScale)
 				y = randInRange(minScale, maxScale)
-				qt.tryInsert(newPoint(x, y, nodeRadius))
+				t.Logf("%f %f", x, y)
+				qt.Root.tryInsert(newPoint(x, y, nodeRadius), -1)
 			} else {
 				if !qt.id.assigned[v.id] {
 					qt.id.assigned[v.id] = true
+					t.Log("created success")
 					numCreated++
 				}
 			}
