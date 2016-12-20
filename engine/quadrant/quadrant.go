@@ -95,26 +95,23 @@ type tree struct {
 	id    *idCache
 }
 
-func New(size int, pointRadius float32) *tree {
-	var r *node
-	var idc *idCache
+func New(nodeCount int, nodeRadius float32) *tree {
+	var (
+		r   *node
+		idc *idCache
+	)
 
 	idc = &idCache{
 		next:     -2,
 		assigned: make(map[int]bool),
 	}
 
-	r = newNode(
-		newPoint(0, 0, pointRadius),
-		-1,
-		"root_quadrant",
-	)
-
+	r = newNode(newPoint(0, 0, nodeRadius), -1, "root_quadrant")
 	r.id = idc.nextID()
 
 	return &tree{
 		Root:  r,
-		Nodes: make([]*node, 4),
+		Nodes: make([]*node, nodeCount),
 		id:    idc,
 	}
 }
