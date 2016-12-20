@@ -1,14 +1,70 @@
-package adt
+// Package quadrant is...
+package quadrant
 
 import (
 	"fmt"
-	"github.com/msawangwan/unitywebservice/mathf"
+	//"github.com/msawangwan/unitywebservice/mathf"
 )
 
-type Node struct {
-	Links []*Node
-	mathf.Vector2f
-	depth string
+type point struct {
+	x, y, radius float32
+}
+
+func newPoint(x, y, r float32) point {
+	return point{x: x, y: y, radius: r}
+}
+
+func (p *point) String() string { return fmt.Sprintf("Point: <%f, %f> Radius: %f", p.x, p.y, p.radius) }
+
+type node struct {
+	point
+	subquadrants []*node
+	id           int
+	depth        int
+	label        string
+}
+
+func newNode(p point, id int, depth int, label string) *node {
+	return &node{
+		point:        newPoint(p.x, p.y, p.radius),
+		subquadrants: make([]*node, 4),
+		id:           id,
+		depth:        depth,
+		label:        label,
+	}
+}
+
+func (n *node) String() string {
+	return fmt.Sprintf("Quadrant Node: [%s] ID: [%d] Depth: [%d] Label: [%s]", n.point, n.id, n.depth, n.label)
+}
+
+type tree struct {
+	Root  *node
+	Nodes []*node
+	id    *idCache
+}
+
+func New(int size, pointRadius float32) *tree {
+	var r *node
+	var idc *idCache
+
+	idc = &idCache{
+		next:     -2,
+		assigned: make(map[int]bool),
+	}
+
+	r = newNode(
+		newPoint(0, 0, pointRadius),
+		ids.nextID(),
+		-1,
+		"root_quadrant",
+	)
+
+	return &tree{
+		Root:  r,
+		Nodes: make([]*nodes, 4),
+		id:    idc,
+	}
 }
 
 func CreateNewQuadTree(v mathf.Vector2f) *Node {

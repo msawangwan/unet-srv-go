@@ -1,0 +1,5 @@
+{
+	"servicePrefix": "api",
+	"logFile": "access.log",
+	"logDir": ""
+}
