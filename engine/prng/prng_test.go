@@ -1,4 +1,4 @@
-package prgn
+package prng
 
 import (
 	"testing"

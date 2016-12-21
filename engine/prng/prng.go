@@ -14,7 +14,7 @@
  * https://www.gnu.org/software/gsl/manual/html_node/Unix-random-number-generators.html#Unix-random-number-generators
  */
 
-package prgn
+package prng
 
 /*
  * m, the modulus:                m > 0
