@@ -23,6 +23,7 @@ func TestCreateNewTree(t *testing.T) {
 }
 
 func TestPopulateQuadrantTree(t *testing.T) {
+	t.Skip("skip building quad tree ...")
 	t.Log("build quadrant tree ...")
 
 	var (

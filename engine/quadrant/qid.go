@@ -16,11 +16,14 @@ func (idc *idCache) nextID() int {
 	idc.Lock()
 	defer idc.Unlock()
 
-	for {
-		idc.next++ // wrap with atmoic?
-		if !idc.assigned[idc.next] {
-			idc.assigned[idc.next] = true
-			return idc.next
-		}
+increment:
+	idc.next++
+
+	if idc.assigned[idc.next] { // in reality: should never be true
+		goto increment
+	} else {
+		idc.assigned[idc.next] = true
 	}
+
+	return idc.next
 }
