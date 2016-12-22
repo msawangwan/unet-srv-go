@@ -5,6 +5,7 @@ package quadrant
 
 import (
 	"fmt"
+	"github.com/msawangwan/unitywebservice/engine/prng"
 )
 
 // type Subdivider is the interface implemented by types that can sort nodes into quadrants
@@ -27,9 +28,12 @@ func (p point) String() string { return fmt.Sprintf("point: <%f, %f> radius: %f"
 type node struct {
 	point
 	id
+
 	subquadrants []*node
-	depth        int
-	label        string
+
+	depth  int
+	label  string
+	placed bool
 }
 
 func newNode(p point, depth int, label string) *node {
@@ -38,6 +42,7 @@ func newNode(p point, depth int, label string) *node {
 		subquadrants: make([]*node, 4),
 		depth:        depth,
 		label:        label,
+		placed:       false,
 	}
 }
 
@@ -115,6 +120,7 @@ func New(nodeCount int, nodeRadius float32) *tree {
 
 	r = newNode(newPoint(0, 0, nodeRadius), -1, "root_quadrant")
 	r.id = s.nextAvailable()
+	r.placed = true
 
 	return &tree{
 		Root:  r,
@@ -127,13 +133,38 @@ func (t *tree) AddQuadrant(n *node, i int) {
 	t.Nodes[i] = n
 }
 
-func (t *tree) Subdivide(max) {
+func (t *tree) Subdivide(scale float32) {
+	const amax = 20 // TODO: how to sync this const with the client?
+
 	var (
-		created    []id
-		a, ma      int
-		smin, smax float32
+		created    map[id]bool = make(map[id]bool)
+		smin, smax float32     = -scale, scale
+		a, c       int         = 0, 0 // attemptsCount, createdCount
 	)
 
+	r = prng.New(0)
+
+	for c < cap(t.Nodes) {
+		for _, v := range t.Nodes {
+			if !v.placed {
+				x = r.InRange(smin, smax)
+				y = r.InRange(smin, smax)
+				t.Root.TryInsert(newPoint(x, y, 0), -1)
+			} else {
+				if !created[v.id] { // TODO: need to actually create the nodes?
+					created[v.id] = true
+					c++
+				}
+			}
+		}
+
+		if a > amax {
+			fmt.Printf("engine/quadrant: building tree, max attempts reached\n")
+			break
+		}
+
+		a++
+	}
 }
 
 func (t *tree) String() string { return fmt.Sprintf("quadrant tree root:\n\t%v\n", t.Root) } // TODO: range over children
