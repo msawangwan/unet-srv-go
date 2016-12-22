@@ -2,8 +2,8 @@ package service
 
 import (
 	"encoding/json"
-	"github.com/msawangwan/unitywebservice/model"
-	"github.com/msawangwan/unitywebservice/util"
+	"github.com/msawangwan/unet/model"
+	"github.com/msawangwan/unet/util"
 	"log"
 	"net/http"
 )

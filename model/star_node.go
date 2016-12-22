@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/msawangwan/unitywebservice/mathf"
+	"github.com/msawangwan/unet/mathf"
 )
 
 type StarNode struct {

@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/msawangwan/unitywebservice/db"
+	"github.com/msawangwan/unet/db"
 	"time"
 )
 

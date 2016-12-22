@@ -5,14 +5,14 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	//	"log"
-	"github.com/msawangwan/unitywebservice/util"
+	"github.com/msawangwan/unet/util"
 )
 
 const (
 	kDB_DRIVER   = "postgres"
 	kDB_USER     = "postgres"
 	kDB_PASSWORD = "1234"
-	kDB_DATABASE = "unitywebservice"
+	kDB_DATABASE = "unet"
 )
 
 type postgreManager struct {

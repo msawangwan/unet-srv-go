@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/msawangwan/unitywebservice/util"
+	"github.com/msawangwan/unet/util"
 	"net/http"
 )
 

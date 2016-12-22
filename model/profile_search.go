@@ -1,8 +1,8 @@
 package model
 
 import (
-	"github.com/msawangwan/unitywebservice/db"
-	"github.com/msawangwan/unitywebservice/util"
+	"github.com/msawangwan/unet/db"
+	"github.com/msawangwan/unet/util"
 )
 
 type ProfileSearch struct {

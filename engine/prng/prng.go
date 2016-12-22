@@ -42,12 +42,12 @@ const (
 	kMAX_UNSIGNED64 = uint64(1<<64 - 1)
 )
 
-type instance struct {
+type Instance struct {
 	seed uint64
 }
 
 // New() returns a new prn generator, pass in 0 and it will init itself
-func New(s int64) *instance {
+func New(s int64) *Instance {
 	p := kA*uint64(s) + kC
 
 	if s <= 0 {
@@ -56,21 +56,21 @@ func New(s int64) *instance {
 		s /= 2
 	}
 
-	return &instance{
+	return &Instance{
 		seed: uint64(s),
 	}
 }
 
-func (in *instance) lcg() uint64 {
+func (in *Instance) lcg() uint64 {
 	in.seed = (kA*in.seed + kC) % kM
 	return in.seed
 }
 
-func (in *instance) InRange(min, max float32) float32 {
+func (in *Instance) InRange(min, max float32) float32 {
 	return (float32(in.Intn(int(max)-int(min))) + min) * in.Float32()
 }
 
-func (in *instance) Intn(max int) int {
+func (in *Instance) Intn(max int) int {
 	if max == 0 {
 		return 0
 	}
@@ -78,11 +78,11 @@ func (in *instance) Intn(max int) int {
 }
 
 // Float32() returns a float in the range of (0, 1]
-func (in *instance) Float32() float32 {
+func (in *Instance) Float32() float32 {
 	return float32(in.lcg()) / float32(kM)
 }
 
-func (in *instance) onUnitCircle() (x, y float32) {
+func (in *Instance) onUnitCircle() (x, y float32) {
 	h := in.Float32() * kTWO_PI
 
 	x = float32(math.Sin(float64(h)))
@@ -91,7 +91,7 @@ func (in *instance) onUnitCircle() (x, y float32) {
 	return
 }
 
-func (in *instance) InUnitCircle() (x, y float32) {
+func (in *Instance) InUnitCircle() (x, y float32) {
 	r := in.Float32()
 
 	x, y = in.onUnitCircle()

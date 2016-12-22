@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/msawangwan/unitywebservice/service"
-	"github.com/msawangwan/unitywebservice/util"
+	"github.com/msawangwan/unet/service"
+	"github.com/msawangwan/unet/util"
 	"log"
 	"net/http"
 )
