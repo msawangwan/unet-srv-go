@@ -10,6 +10,13 @@ type iteration struct {
 	i, count, times int
 }
 
+func TestPrintSomeConstants(t *testing.T) {
+	t.Log("signed32: ", kMAX_SIGNED32)
+	t.Log("unsigned32: ", kMAX_UNSIGNED32)
+	t.Log("signed64: ", kMAX_SIGNED64)
+	t.Log("unsigned64: ", kMAX_UNSIGNED64)
+}
+
 func TestJustSeeIfWeCanGenerateSomeRandomNumbers(t *testing.T) {
 	t.Log("create a prng instance...")
 
@@ -142,6 +149,29 @@ func TestZeroValueInputParamter(t *testing.T) {
 
 	for i.i = 0; i.i < i.times; i.i++ {
 		t.Logf("passing 0 into InRange() ...  %f", r.InRange(0, 0))
+	}
+
+	t.Log("test complete")
+}
+
+func TestTrigOnUnitCircle(t *testing.T) {
+	t.Log("generate random 2d coordinates")
+
+	var (
+		x, y float32
+	)
+
+	r := New(test_seed)
+	i := &iteration{i: 0, times: 10}
+
+	for i.i = 0; i.i < i.times; i.i++ {
+		x, y = r.onUnitCircle()
+		t.Logf("random point on unit circle: <%f, %f>", x, y)
+	}
+
+	for i.i = 0; i.i < i.times; i.i++ {
+		x, y = r.InUnitCircle()
+		t.Logf("random point inside unit circle: <%f, %f>", x, y)
 	}
 
 	t.Log("test complete")

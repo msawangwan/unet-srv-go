@@ -1,10 +1,18 @@
-// Package quadrant is a quadtree-like data structure, useful for creating sparse space/star maps for video games
+// package quadrant is a quadtree-like data structure, useful for creating sparse
+// space/star maps for video games
+
 package quadrant
 
 import (
 	"fmt"
 )
 
+// type Subdivider is the interface implemented by types that can sort nodes into quadrants
+type Subdivider interface {
+	Subdivide()
+}
+
+// type point is a 2D coordinate that covers an area defined by radius
 type point struct {
 	x, y, radius float32
 }
@@ -15,10 +23,11 @@ func newPoint(x, y, r float32) point {
 
 func (p point) String() string { return fmt.Sprintf("point: <%f, %f> radius: %f", p.x, p.y, p.radius) }
 
+// type node defines the properties of a quadrant
 type node struct {
 	point
+	id
 	subquadrants []*node
-	id           int
 	depth        int
 	label        string
 }
@@ -89,35 +98,42 @@ func (n *node) String() string {
 	return fmt.Sprintf("quadrant node: [%s] id: [%d] depth: [%d] label: [%s]", n.point, n.id, n.depth, n.label)
 }
 
+// type tree consists of a root node (and it's children) that is the parent of all subquadrants
 type tree struct {
 	Root  *node
 	Nodes []*node
-	id    *idCache
+	*store
 }
 
 func New(nodeCount int, nodeRadius float32) *tree {
 	var (
-		r   *node
-		idc *idCache
+		r *node
+		s *store
 	)
 
-	idc = &idCache{
-		next:     -2,
-		assigned: make(map[int]bool),
-	}
+	s = NewIDStore(-2)
 
 	r = newNode(newPoint(0, 0, nodeRadius), -1, "root_quadrant")
-	r.id = idc.nextID()
+	r.id = s.nextAvailable()
 
 	return &tree{
 		Root:  r,
 		Nodes: make([]*node, nodeCount),
-		id:    idc,
+		store: s,
 	}
 }
 
 func (t *tree) AddQuadrant(n *node, i int) {
 	t.Nodes[i] = n
+}
+
+func (t *tree) Subdivide(max) {
+	var (
+		created    []id
+		a, ma      int
+		smin, smax float32
+	)
+
 }
 
 func (t *tree) String() string { return fmt.Sprintf("quadrant tree root:\n\t%v\n", t.Root) } // TODO: range over children

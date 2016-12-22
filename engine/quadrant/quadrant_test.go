@@ -55,8 +55,8 @@ func TestPopulateQuadrantTree(t *testing.T) {
 				t.Logf("%f %f", x, y)
 				qt.Root.tryInsert(newPoint(x, y, nodeRadius), -1)
 			} else {
-				if !qt.id.assigned[v.id] {
-					qt.id.assigned[v.id] = true
+				if !qt.assigned[v.id] {
+					qt.assigned[v.id] = true
 					t.Log("created success")
 					numCreated++
 				}

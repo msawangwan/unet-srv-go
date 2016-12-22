@@ -7,18 +7,13 @@ import (
 func TestValidateIDGenerator(t *testing.T) {
 	t.Log("ensure id generator doesn't get stuck in infinite loop")
 
-	t.Log("\tinit id generator ...")
-
-	var idg *idCache = &idCache{
-		next:     -2,
-		assigned: make(map[int]bool),
-	}
+	var ids *store = NewIDStore(-2)
 
 	t.Log("\tgenerate ids ...")
 
-	var i int = 0
-	for i < 50 {
-		t.Logf("\tid [# %d]: %d", i, idg.nextID())
+	var i int
+	for i = 0; i < 50; i++ {
+		t.Logf("\tid [# %d]: %v", i, ids.nextAvailable())
 		i++
 	}
 

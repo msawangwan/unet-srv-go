@@ -4,26 +4,34 @@ import (
 	"sync"
 )
 
-// an idGenerator encapsulates all information for tracking quadrant ids
-type idCache struct {
-	next     int
-	assigned map[int]bool
+type id int
+
+// a store encapsulates all information for tracking and delegating quadrant ids
+type store struct {
+	next     id
+	assigned map[id]bool
 	sync.Mutex
 }
 
-// nextID returns the next valid id, and should be run in a goroutine
-func (idc *idCache) nextID() int {
-	idc.Lock()
-	defer idc.Unlock()
+func NewIDStore(start int) *store {
+	return &store{
+		next:     id(start),
+		assigned: make(map[id]bool),
+	}
+}
+
+func (s *store) nextAvailable() id {
+	s.Lock()
+	defer s.Unlock()
 
 increment:
-	idc.next++
+	s.next++
 
-	if idc.assigned[idc.next] { // in reality: should never be true
+	if s.assigned[s.next] {
 		goto increment
 	} else {
-		idc.assigned[idc.next] = true
+		s.assigned[s.next] = true
 	}
 
-	return idc.next
+	return s.next
 }
