@@ -73,3 +73,19 @@ func TestPopulateQuadrantTree(t *testing.T) {
 
 	t.Log("populated a quadrant tree without error")
 }
+
+func TestSubdividerImplementation(t *testing.T) {
+	t.Log("testing a tree's ability to subdivide its children into subquadrants")
+
+	var (
+		numNodes   int     = 9
+		nodeRadius float32 = 0.5
+		scale      float32 = 20.0
+	)
+
+	qt := New(numNodes, nodeRadius)
+
+	qt.Subdivide(scale)
+
+	t.Log("test compelte")
+}
