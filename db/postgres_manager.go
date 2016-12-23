@@ -12,7 +12,7 @@ const (
 	kDB_DRIVER   = "postgres"
 	kDB_USER     = "postgres"
 	kDB_PASSWORD = "1234"
-	kDB_DATABASE = "unet"
+	kDB_DATABASE = "unitywebservice"
 )
 
 type postgreManager struct {

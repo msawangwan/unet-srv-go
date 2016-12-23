@@ -17,6 +17,7 @@
 package prng
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -100,4 +101,8 @@ func (in *Instance) InUnitCircle() (x, y float32) {
 	y *= r
 
 	return
+}
+
+func (in *Instance) String() string {
+	return fmt.Sprintf("PRNG seed is: [%v]", in.seed)
 }

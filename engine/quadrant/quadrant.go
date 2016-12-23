@@ -46,7 +46,23 @@ func newNode(p point, depth int, label string, isattached bool) *node {
 	}
 }
 
-func (n *node) isOverlappedBy(other *node) bool { return false }
+func (n *node) isOverlappedBy(other *node) bool {
+	dx := n.x - other.x
+	dy := n.y - other.y
+
+	if dx < 0 {
+		dx *= -1
+	}
+	if dy < 0 {
+		dy *= -1
+	}
+
+	if dx <= n.radius || dy <= n.radius {
+		return true
+	} else {
+		return false
+	}
+}
 
 func (n *node) tryInsert(other *node) {
 	other.depth++
@@ -65,7 +81,6 @@ func (n *node) tryInsert(other *node) {
 	if first {
 		if n.subquadrants[0] == nil {
 			if !n.isOverlappedBy(other) {
-				//n.subquadrants[0] = newNode(p, depth, "[quadrant_1]", true)
 				other.label = "[quadrant_1]"
 				other.attached = true
 				n.subquadrants[0] = other
@@ -76,7 +91,6 @@ func (n *node) tryInsert(other *node) {
 	} else if second {
 		if n.subquadrants[1] == nil {
 			if !n.isOverlappedBy(other) {
-				//n.subquadrants[1] = newNode(p, depth, "[quadrant_2]", true)
 				other.label = "[quadrant_2]"
 				other.attached = true
 				n.subquadrants[1] = other
@@ -87,7 +101,6 @@ func (n *node) tryInsert(other *node) {
 	} else if third {
 		if n.subquadrants[2] == nil {
 			if !n.isOverlappedBy(other) {
-				//n.subquadrants[2] = newNode(p, depth, "[quadrant_3]", true)
 				other.label = "[quadrant_3]"
 				other.attached = true
 				n.subquadrants[2] = other
@@ -98,7 +111,6 @@ func (n *node) tryInsert(other *node) {
 	} else if fourth {
 		if n.subquadrants[3] == nil {
 			if !n.isOverlappedBy(other) {
-				//n.subquadrants[3] = newNode(p, depth, "[quadrant_4]", true)
 				other.label = "[quadrant_4]"
 				other.attached = true
 				n.subquadrants[3] = other
@@ -129,16 +141,19 @@ func New(nodeCount int, nodeRadius float32, seed int64) *tree {
 		ns   []*node
 		r, n *node
 		s    *store
+		size int
 	)
 
 	s = NewIDStore(-2)
+	size = nodeCount + 1
 
 	r = newNode(newPoint(0, 0, nodeRadius), -1, "[root_quadrant]", true)
 	r.id = s.nextAvailable()
 
-	ns = make([]*node, nodeCount)
+	ns = make([]*node, size)
+	ns[0] = r
 
-	for i := 0; i < nodeCount; i++ {
+	for i := 1; i < size; i++ {
 		n = newNode(newPoint(0, 0, nodeRadius), -1, "[detached]", false)
 		n.id = s.nextAvailable()
 		ns[i] = n
@@ -147,17 +162,10 @@ func New(nodeCount int, nodeRadius float32, seed int64) *tree {
 	return &tree{
 		Root:     r,
 		Nodes:    ns,
-		size:     nodeCount,
+		size:     size,
 		store:    s,
-		Instance: prng.New(seed), // TODO: need to pass seed through constructor
+		Instance: prng.New(seed),
 	}
-}
-
-func (t *tree) attach(n *node, min, max float32) {
-	n.x = t.Instance.InRange(min, max)
-	n.y = t.Instance.InRange(min, max)
-
-	t.Root.tryInsert(n)
 }
 
 func (t *tree) Partition(scale float32) {
@@ -172,7 +180,9 @@ func (t *tree) Partition(scale float32) {
 	for c < t.size {
 		for _, n := range t.Nodes {
 			if !n.attached {
-				t.attach(n, smin, smax)
+				n.x = t.Instance.InRange(smin, smax)
+				n.y = t.Instance.InRange(smin, smax)
+				t.Root.tryInsert(n)
 			} else {
 				if !created[n.id] {
 					created[n.id] = true
@@ -188,6 +198,8 @@ func (t *tree) Partition(scale float32) {
 
 		a++
 	}
+
+	fmt.Println("SEED AFTER LOOPS", t.Instance)
 }
 
 func (t *tree) String() string { return fmt.Sprintf("quadrant tree root:\n\t%v\n", t.Root) } // TODO: range over children

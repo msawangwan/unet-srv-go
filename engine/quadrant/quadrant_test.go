@@ -5,7 +5,9 @@ import (
 )
 
 const (
-	testSeed = 1482284596187742126
+	testSeed          = 1482284596187742126
+	testNodeRadius    = 1.2
+	testQuadrantScale = 50
 )
 
 func TestCreateNewTree(t *testing.T) {
@@ -30,9 +32,11 @@ func TestSubdividerImplementation(t *testing.T) {
 
 	var (
 		numNodes   int     = 9
-		nodeRadius float32 = 0.5
-		scale      float32 = 20.0
+		nodeRadius float32 = testNodeRadius
+		scale      float32 = testQuadrantScale
 	)
+
+	t.Log("test seed:", testSeed)
 
 	qt := New(numNodes, nodeRadius, testSeed)
 
