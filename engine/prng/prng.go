@@ -1,19 +1,16 @@
-/*
- * package prng implements a (very basic lcg, for now) pseudo-random number generator that
- * that matches a c#-client side prng, based on source code from:
- *
- * http://stackoverflow.com/questions/15500621/c-c-algorithm-to-produce-same-pseudo-random-number-sequences-from-same-seed-on
- *
- * also see:
- *
- * http://www-personal.umich.edu/~mejn/percolation/rnglong.h
- * http://www-personal.umich.edu/~mejn/percolation/rnglong.c
- *
- * and read:
- *
- * https://www.gnu.org/software/gsl/manual/html_node/Unix-random-number-generators.html#Unix-random-number-generators
- */
-
+// package prng implements a (very basic lcg, for now) pseudo-random number
+// generator that matches a c#-client side prng, based on source code from:
+//
+// http://stackoverflow.com/questions/15500621/c-c-algorithm-to-produce-same-pseudo-random-number-sequences-from-same-seed-on
+//
+// also see:
+//
+// http://www-personal.umich.edu/~mejn/percolation/rnglong.h
+// http://www-personal.umich.edu/~mejn/percolation/rnglong.c
+//
+// and read:
+//
+// https://www.gnu.org/software/gsl/manual/html_node/Unix-random-number-generators.html#Unix-random-number-generators
 package prng
 
 import (

@@ -10,9 +10,9 @@ const (
 type StarMap struct {
 	Seed         int64   `json:"seed"`
 	StarCount    int     `json:"starCount"`
-	StarRadius   float64 `json:"starRadius"`
-	Scale        float64 `json:"scale"`
-	Density      float64 `json:"density"`
+	StarRadius   float32 `json:"starRadius"`
+	Scale        float32 `json:"scale"`
+	Density      float32 `json:"density"`
 	LoadExisting bool    `json:"loadExisting"`
 }
 

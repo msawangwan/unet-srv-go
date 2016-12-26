@@ -13,7 +13,7 @@ type store struct {
 	sync.Mutex
 }
 
-func NewIDStore(start int) *store {
+func newIDStore(start int) *store {
 	return &store{
 		next:     id(start),
 		assigned: make(map[id]bool),

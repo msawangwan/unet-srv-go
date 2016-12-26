@@ -128,7 +128,7 @@ func (n *node) String() string {
 }
 
 // type tree consists of a root node (and it's children) that is the parent of all subquadrants
-type tree struct {
+type Tree struct {
 	Root  *node
 	Nodes []*node
 	size  int
@@ -136,7 +136,7 @@ type tree struct {
 	*prng.Instance
 }
 
-func New(nodeCount int, nodeRadius float32, seed int64) *tree {
+func New(nodeCount int, nodeRadius float32, seed int64) *Tree {
 	var (
 		ns   []*node
 		r, n *node
@@ -144,7 +144,7 @@ func New(nodeCount int, nodeRadius float32, seed int64) *tree {
 		size int
 	)
 
-	s = NewIDStore(-2)
+	s = newIDStore(-2)
 	size = nodeCount + 1
 
 	r = newNode(newPoint(0, 0, nodeRadius), -1, "[root_quadrant]", true)
@@ -159,7 +159,7 @@ func New(nodeCount int, nodeRadius float32, seed int64) *tree {
 		ns[i] = n
 	}
 
-	return &tree{
+	return &Tree{
 		Root:     r,
 		Nodes:    ns,
 		size:     size,
@@ -168,7 +168,7 @@ func New(nodeCount int, nodeRadius float32, seed int64) *tree {
 	}
 }
 
-func (t *tree) Partition(scale float32) {
+func (t *Tree) Partition(scale float32) {
 	const amax = 20 // TODO: how to sync this const with the client?
 
 	var (
@@ -198,8 +198,6 @@ func (t *tree) Partition(scale float32) {
 
 		a++
 	}
-
-	fmt.Println("SEED AFTER LOOPS", t.Instance)
 }
 
-func (t *tree) String() string { return fmt.Sprintf("quadrant tree root:\n\t%v\n", t.Root) } // TODO: range over children
+func (t *Tree) String() string { return fmt.Sprintf("quadrant tree root:\n\t%v\n", t.Root) } // TODO: range over children

@@ -7,7 +7,7 @@ import (
 func TestValidateIDGenerator(t *testing.T) {
 	t.Log("ensure id generator doesn't get stuck in infinite loop")
 
-	var ids *store = NewIDStore(-2)
+	var ids *store = newIDStore(-2)
 
 	t.Log("\tgenerate ids ...")
 

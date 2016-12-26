@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	//	"log"
-	"github.com/msawangwan/unet/util"
 )
 
 const (
@@ -15,15 +13,19 @@ const (
 	kDB_DATABASE = "unitywebservice"
 )
 
-type postgreManager struct {
-	DB *sql.DB
+// type PostgreHandle wraps a db connection pool into postgres db
+type PostgreHandle struct {
+	*sql.DB
 }
 
-var Postgres *postgreManager
-
-func init() {
-	var db *sql.DB
-	var err error
+// NewPostgreHandle returns an instance of the connection pool, or nil and an
+// error if there was one
+func NewPostgreHandle() (*PostgreHandle, error) {
+	var (
+		pg  *PostgreHandle
+		db  *sql.DB
+		err error
+	)
 
 	connstr := fmt.Sprintf(
 		"user=%s password=%s dbname=%s sslmode=disable",
@@ -33,18 +35,17 @@ func init() {
 	)
 
 	db, err = sql.Open(kDB_DRIVER, connstr)
-
 	if err != nil {
-		util.Log.Fatal(err)
+		return nil, err
 	}
 
 	if err = db.Ping(); err != nil {
-		util.Log.Fatal(err)
+		return nil, err
 	}
 
-	Postgres = &postgreManager{
+	pg = &PostgreHandle{
 		DB: db,
 	}
 
-	util.Log.InitMessage("postgres ready ...")
+	return pg, nil
 }
