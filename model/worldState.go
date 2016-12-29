@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/msawangwan/unet/db"
 	"github.com/msawangwan/unet/engine/quadrant"
 )
 
@@ -15,19 +16,20 @@ func NewWorldState(sm *StarMap) *WorldState {
 	}
 }
 
-func (ws *WorldState) LoadWorldDataIntoMem(p *Profile) error {
-	conn, err := db.Redis.DB.Get()
+func (ws *WorldState) LoadWorldDataIntoMem(p *Profile, redis *db.RedisHandle) error {
+	conn, err := redis.Get()
 	if err != nil {
 		return err
 	}
-	defer db.Redis.DB.Put(conn)
+	defer redis.Put(conn)
 
-	var (
-		query int
-		key   string = db.Redis.CreateKey_IsWorldInMemory("my_name")
-	)
+	//	var (
+	//		query int
+	//		key   string = db.Redis.CreateKey_IsWorldInMemory("my_name")
+	//	)
 
 	//	query, err = conn.Cmd(db.CMD_GET, key)
+	return nil
 }
 
 func (ws *WorldState) String() string {

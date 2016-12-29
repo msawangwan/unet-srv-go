@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+
 	"github.com/mediocregopher/radix.v2/pool"
 )
 
@@ -34,7 +35,7 @@ func NewRedisHandle() (*RedisHandle, error) {
 		Pool: conns,
 	}
 
-	err = Redis.createNameDB()
+	err = redis.createNameDB()
 	if err != nil {
 		if err != ErrStoreAlreadyExists {
 			return nil, err
@@ -48,13 +49,13 @@ func NewRedisHandle() (*RedisHandle, error) {
 
 // createNameDB is a setup routine that cretes a store for user names in use
 func (rh *RedisHandle) createNameDB() error {
-	conn, err := rh.DB.Get()
+	conn, err := rh.Get()
 	if err != nil {
 		return err
 	}
-	defer rh.DB.Put(conn)
+	defer rh.Put(conn)
 
-	query := conn.Cmd(CMD_EXIST, KEY_NAMES_TAKEN)
+	query := conn.Cmd(CMD_EXISTS, KEY_NAMES_TAKEN)
 	if query.Err != nil {
 		return query.Err
 	} else {

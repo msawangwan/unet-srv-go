@@ -1,11 +1,7 @@
-package service
+package admin
 
 import (
-	//	"fmt"
-	//	"io"
 	"log"
-	//	"net/http"
-	//	"os"
 )
 
 const (
@@ -49,12 +45,3 @@ func (c *Console) Info(s string)     {}
 func (c *Console) Resource(s string) {}
 func (c *Console) Http(s string)     {}
 func (c *Console) Db(s string)       {}
-
-type Empty struct{}
-
-func (nl *Empty) Log(s string)      {}
-func (nl *Empty) Init(s string)     {}
-func (nl *Empty) Info(s string)     {}
-func (nl *Empty) Resource(s string) {}
-func (nl *Empty) Http(s string)     {}
-func (nl *Empty) Db(s string)       {}

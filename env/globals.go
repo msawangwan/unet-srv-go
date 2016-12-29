@@ -3,24 +3,30 @@ package env
 
 import (
 	"github.com/msawangwan/unet/db"
+	"github.com/msawangwan/unet/debug"
 )
 
 // type Global encapsulates global handlers
 type Global struct {
 	*db.RedisHandle
 	*db.PostgreHandle
+	*debug.Log
 }
 
-func NewGlobalHandle(redis *db.RedisHandle, pg *db.PostgreHandle) *Global {
+// NewGlobalHandle returns a new instance of a global context object
+func New(redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
 	return &Global{
 		RedisHandle:   redis,
 		PostgreHandle: pg,
+		Log:           log,
 	}
 }
 
-func NullGlobalHandle() *Global {
+// NullGlobalHanldle  returns an empty global context
+func Null() *Global {
 	return &Global{
 		RedisHandle:   nil,
 		PostgreHandle: nil,
+		Log:           nil,
 	}
 }

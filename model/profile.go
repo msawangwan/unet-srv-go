@@ -15,12 +15,7 @@ type Profile struct {
 	TimeLastSave time.Time `json: "timelastsave"`
 }
 
-var (
-	STMT_SEL_ALLPROFILE    string = "SELECT * FROM profile"
-	STMT_INS_CREATEPROFILE string = "INSERT INTO profile (profile_name, profile_uuid, hashed_gamestate, date_created, timeof_lastsave) VALUES ($1, $2, $3, $4, $5)"
-)
-
-func CreateNewProfile(name string) (*Profile, error) {
+func CreateNewProfile(name string, postgre *db.PostgreHandle) (*Profile, error) {
 	t0 := time.Now()
 
 	profile := &Profile{
@@ -31,7 +26,7 @@ func CreateNewProfile(name string) (*Profile, error) {
 		TimeLastSave: t0,
 	}
 
-	stmt, err := db.Postgres.DB.Prepare(STMT_INS_CREATEPROFILE)
+	stmt, err := postgre.Prepare(db.STATEMENT_INSERT_CREATE_PROFILE)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +47,8 @@ func CreateNewProfile(name string) (*Profile, error) {
 	return profile, nil
 }
 
-func (p *Profile) MarkNameAsNotAvailable() error {
-	r := db.Redis.DB.Cmd(db.CMD_SADDMEM, db.K_NAMES_NOT_AVAIL, p.Name)
+func (p *Profile) MarkNameAsNotAvailable(redis *db.RedisHandle) error {
+	r := redis.Cmd(db.CMD_SADD, db.KEY_NAMES_TAKEN, p.Name)
 	if r.Err != nil {
 		return r.Err
 	} else {
