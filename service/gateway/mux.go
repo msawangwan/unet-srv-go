@@ -33,7 +33,7 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if route.Pattern.MatchString(r.URL.Path) == true {
 			if route.Method == r.Method {
 				foundRoute = true
-				mux.Printf("found route")
+				mux.Printf("found route: %s\n", r.URL.Path)
 				route.Handler.ServeHTTP(w, r)
 				break
 			}
@@ -41,6 +41,6 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !foundRoute {
-		mux.Printf("invalid request")
+		mux.Printf("invalid request: %s\n", r.URL.Path)
 	}
 }
