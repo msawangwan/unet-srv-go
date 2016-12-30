@@ -16,10 +16,6 @@ const (
 	configFile = "conf.json" // TODO: use flags
 )
 
-var (
-	laddr = ":8080" // TODO: get from conf
-)
-
 func main() {
 	var (
 		err error
@@ -79,7 +75,7 @@ func main() {
 	logger.Printf("redis handle ready ...\n")
 	logger.Printf("postgre handle ready ...\n")
 	logger.Printf("all systems go ...\n")
-	logger.Printf("service listening and serving on %s ...\n", laddr)
+	logger.Printf("service listening and serving on %s ...\n", conf.ListenAddress)
 
 	logger.SetPrefix_Debug()
 
