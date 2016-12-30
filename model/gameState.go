@@ -3,13 +3,13 @@ package model
 // type Gamestate contains:
 // a profile struct and a starmap struct
 type GameState struct {
-	CurrentProfile *Profile `json:"currentProfile"`
-	CurrentStarMap *StarMap `json:"currentStarMap"`
+	CurrentProfile        *Profile       `json:"currentProfile"`
+	CurrentGameParameters *GameParameter `json:"currentGameParameters"`
 }
 
-func NewGameState(p *Profile, sm *StarMap) *GameState {
+func NewGameState(p *Profile, gp *GameParameter) *GameState {
 	return &GameState{
-		CurrentProfile: p,
-		CurrentStarMap: sm,
+		CurrentProfile:        p,
+		CurrentGameParameters: gp,
 	}
 }

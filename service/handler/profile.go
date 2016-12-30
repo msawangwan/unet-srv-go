@@ -45,10 +45,10 @@ func CreateNewProfile(e *env.Global, w http.ResponseWriter, r *http.Request) *ex
 	}
 
 	var (
-		gamestate *model.GameState
-		starmap   *model.StarMap
-		profile   *model.Profile
-		n         model.ProfileName
+		gamestate  *model.GameState
+		gameparams *model.GameParameter
+		profile    *model.Profile
+		n          model.ProfileName
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&n)
@@ -72,11 +72,11 @@ func CreateNewProfile(e *env.Global, w http.ResponseWriter, r *http.Request) *ex
 		e.Printf("\t%s\n", profile.Name)
 	}
 
-	starmap = model.NewMapDefaultParams(profile.Seed)
-	gamestate = model.NewGameState(profile, starmap)
+	gameparams = model.NewGameParameter(e.MaximumAttemptsWhenSpawningNodes, e.WorldNodeCount, e.WorldScale, e.NodeRadius)
+	gamestate = model.NewGameState(profile, gameparams)
 
-	e.Printf("new starmap:\n")
-	e.Printf("\t%+v\n", starmap)
+	e.Printf("new game parameters:\n")
+	e.Printf("\t%+v\n", gameparams)
 	e.Printf("new gamestate:\n")
 	e.Printf("\t%+v\n", gamestate)
 

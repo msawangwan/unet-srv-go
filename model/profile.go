@@ -13,7 +13,7 @@ type Profile struct {
 	Name string `json: "name"`
 	UUID string `json: "uuid"`
 
-	Seed int64 `json: "hashedgamestate"`
+	Seed int64 `json: "seed"`
 
 	DateCreated  time.Time `json: "datecreated"`
 	TimeLastSave time.Time `json: "timelastsave"`
@@ -29,6 +29,8 @@ func CreateNewProfile(name string, postgre *db.PostgreHandle) (*Profile, error) 
 		DateCreated:  t0,
 		TimeLastSave: t0,
 	}
+
+	profile.Seed = 1482284596187742126 // TODO: this is for DEBUG ONLY REMEMBER TO DELETE!!!!
 
 	stmt, err := postgre.Prepare(db.STATEMENT_INSERT_CREATE_PROFILE)
 	if err != nil {
