@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	//	"log"
 
 	"database/sql"
 

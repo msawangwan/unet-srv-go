@@ -1,8 +1,12 @@
 package model
 
 import (
-	"github.com/msawangwan/unet/db"
+	"fmt"
 	"time"
+
+	"github.com/msawangwan/unet/db"
+	"github.com/msawangwan/unet/engine/quadrant"
+	"github.com/msawangwan/unet/env"
 )
 
 type Profile struct {
@@ -54,4 +58,53 @@ func (p *Profile) MarkNameAsNotAvailable(redis *db.RedisHandle) error {
 	} else {
 		return nil
 	}
+}
+
+func (p *Profile) LoadIntoMemory(e *env.Global, redis *db.RedisHandle) error {
+	key := e.CreateKey_IsWorldInMemory(p.UUID)
+
+	conn, err := e.Get()
+	if err != nil {
+		return err
+	}
+	defer e.Put(conn)
+
+	var res int
+
+	res, err = conn.Cmd(db.CMD_EXISTS, key).Int()
+	if err != nil {
+		return err
+	} else {
+		if res != 1 {
+			if err = conn.Cmd(db.CMD_MULTI).Err; err != nil { // start a tx
+				return err
+			}
+
+			worldKey := e.CreateKey_ValidWorldNodes(p.UUID)
+			world := quadrant.New(30, 1.2, p.Seed) // instantiate nodes
+			world.Partition(50.0)
+
+			for i, v := range world.Nodes { // store them in redis store
+				e.Printf("\t%+v\n", v)
+				x, y := v.Position()
+				e.Printf("\t%f, %f\n", x, y)
+				err = conn.Cmd(db.CMD_HSET, worldKey, i, fmt.Sprintf("%f:%f", x, y)).Err
+				if err != nil {
+					return err
+				}
+			}
+
+			err = conn.Cmd(db.CMD_SET, key, 1).Err // mark it as loaded in mem
+			if err != nil {
+				return err
+			}
+
+			if err = conn.Cmd(db.CMD_EXEC).Err; err != nil { // execute the tx
+				return err
+			}
+		}
+	}
+
+	e.Printf("NO ERRORS\n")
+	return nil
 }

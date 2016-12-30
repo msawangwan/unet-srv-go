@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/msawangwan/unet/env"
-	//"github.com/msawangwan/unet/service/exception"
 	"github.com/msawangwan/unet/service/handler"
 	"github.com/msawangwan/unet/service/resource"
 )
@@ -40,12 +39,12 @@ func NewRouteTable(environment *env.Global) *Table {
 			},
 			"profile_create": &route{
 				Method:  "POST",
-				Pattern: cache("api/profile/create"),
+				Pattern: cache("api/profile/new"),
 				Handler: resource.Context{environment, handler.CreateNewProfile},
 			},
 			"profile_world_new_data": &route{
 				Method:  "POST",
-				Pattern: cache("api/profile/world/new_data"),
+				Pattern: cache("api/profile/world/load"),
 				Handler: resource.Context{environment, handler.GenerateWorldData},
 			},
 		},

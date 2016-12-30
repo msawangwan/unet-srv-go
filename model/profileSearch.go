@@ -31,3 +31,7 @@ func (ps *ProfileSearch) IsProfileNameAvailable(redis *db.RedisHandle) (bool, er
 		}
 	}
 }
+
+type ProfileName struct {
+	Text string
+}

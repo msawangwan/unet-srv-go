@@ -40,7 +40,7 @@ func NewRedisHandle() (*RedisHandle, error) {
 		if err != ErrStoreAlreadyExists {
 			return nil, err
 		} else {
-			fmt.Printf("%s", err)
+			fmt.Errorf("%s\n", err) // TODO: print to console or handle?
 		}
 	}
 

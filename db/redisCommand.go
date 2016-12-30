@@ -26,4 +26,8 @@ const (
 	CMD_SREM      = "SREM"
 	CMD_SISMEMBER = "SISMEMBER"
 	CMD_SMEMBERS  = "SMEMBERS"
+
+	// transaction
+	CMD_MULTI = "MULTI"
+	CMD_EXEC  = "EXEC"
 )

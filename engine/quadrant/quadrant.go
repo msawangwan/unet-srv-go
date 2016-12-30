@@ -123,6 +123,8 @@ func (n *node) tryInsert(other *node) {
 	}
 }
 
+func (n *node) Position() (float32, float32) { return n.x, n.y }
+
 func (n *node) String() string {
 	return fmt.Sprintf("quadrant node: [%s] id: [%d] depth: [%d] label: [%s]", n.point, n.id, n.depth, n.label)
 }
