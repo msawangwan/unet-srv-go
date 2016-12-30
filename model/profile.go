@@ -60,41 +60,52 @@ func (p *Profile) MarkNameAsNotAvailable(redis *db.RedisHandle) error {
 	}
 }
 
-func (p *Profile) LoadIntoMemory(e *env.Global, redis *db.RedisHandle) error {
-	key := e.CreateKey_IsWorldInMemory(p.UUID)
+func (p *Profile) LoadIntoMemory(e *env.Global) error {
+	k1 := e.CreateKey_IsWorldInMemory(p.UUID)
 
 	conn, err := e.Get()
 	if err != nil {
 		return err
 	}
-	defer e.Put(conn)
 
-	var res int
+	defer func() {
+		e.Put(conn)
+		e.SetPrefix_Debug()
+	}()
 
-	res, err = conn.Cmd(db.CMD_EXISTS, key).Int()
+	e.SetPrefix_DBActivity()
+	e.Printf("redis: created key [%s]\n", k1)
+
+	var (
+		res int
+	)
+
+	res, err = conn.Cmd(db.CMD_EXISTS, k1).Int()
 	if err != nil {
 		return err
 	} else {
-		if res != 1 {
+		if res != 1 { // not in memory
+			e.Printf("redis: started transaction ...\n")
 			if err = conn.Cmd(db.CMD_MULTI).Err; err != nil { // start a tx
 				return err
 			}
 
-			worldKey := e.CreateKey_ValidWorldNodes(p.UUID)
+			k2 := e.CreateKey_ValidWorldNodes(p.UUID)
+
+			e.Printf("redis: created key [%s]\n", k2)
+
 			world := quadrant.New(30, 1.2, p.Seed) // instantiate nodes
 			world.Partition(50.0)
 
-			for i, v := range world.Nodes { // store them in redis store
-				e.Printf("\t%+v\n", v)
-				x, y := v.Position()
-				e.Printf("\t%f, %f\n", x, y)
-				err = conn.Cmd(db.CMD_HSET, worldKey, i, fmt.Sprintf("%f:%f", x, y)).Err
+			for i, n := range world.Nodes { // store them in redis store
+				x, y := n.Position()
+				err = conn.Cmd(db.CMD_HSET, k2, i, fmt.Sprintf("%f:%f", x, y)).Err
 				if err != nil {
 					return err
 				}
 			}
 
-			err = conn.Cmd(db.CMD_SET, key, 1).Err // mark it as loaded in mem
+			err = conn.Cmd(db.CMD_SET, k1, 1).Err // mark it as loaded in mem
 			if err != nil {
 				return err
 			}
@@ -102,9 +113,12 @@ func (p *Profile) LoadIntoMemory(e *env.Global, redis *db.RedisHandle) error {
 			if err = conn.Cmd(db.CMD_EXEC).Err; err != nil { // execute the tx
 				return err
 			}
+
+			e.Printf("redis: executed transaction, node data now cached in memory ...\n")
+		} else {
+			e.Printf("redis: node data already cached ...\n")
 		}
 	}
 
-	e.Printf("NO ERRORS\n")
 	return nil
 }

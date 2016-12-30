@@ -91,10 +91,6 @@ func GenerateWorldData(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	// 1. create a redis key out of the profile uuid
-	// 2. check if the world loaded into memory using this key
-	// 3. if yes, do nothing (send back true?)
-	// 4. if no, create a new k/v store in redis, where each key maps to a node
 	var (
 		p *model.Profile
 	)
@@ -107,7 +103,7 @@ func GenerateWorldData(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 		e.Printf("\t%+v\n", p)
 	}
 
-	if err = p.LoadIntoMemory(e, e.RedisHandle); err != nil {
+	if err = p.LoadIntoMemory(e); err != nil {
 		return &exception.Handler{err, "error loading the profile world into memory", 500}
 	} else {
 		e.Printf("loaded profile into memory ...\n")

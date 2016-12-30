@@ -57,3 +57,11 @@ func NewLogger() (*Log, error) {
 			nil
 	}
 }
+
+func (l *Log) SetPrefix_Debug() {
+	l.SetPrefix(PREFIX_DEBUG)
+}
+
+func (l *Log) SetPrefix_DBActivity() {
+	l.SetPrefix(PREFIX_DB)
+}
