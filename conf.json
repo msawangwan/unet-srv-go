@@ -1,5 +1,7 @@
 {
+	"listenAddress": ":8080",
 	"servicePrefix": "api",
-	"logFile": "access.log",
-	"logDir": ""
+	"logFile": "debug.log",
+	"logDir": "",
+	"gameParametersFile": "params.json"
 }

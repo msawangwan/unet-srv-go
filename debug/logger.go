@@ -6,9 +6,9 @@ import (
 	"os"
 )
 
-const (
-	LOG_FILENAME = "debug.log"
-)
+//const (
+//LOG_FILENAME = "debug.log"
+//)
 
 const (
 	PREFIX_DEBUG = "[DEBUG] "
@@ -38,9 +38,9 @@ type Log struct {
 	*log.Logger
 }
 
-func NewLogger() (*Log, error) {
+func NewLogger(filename string) (*Log, error) {
 	logfile, err := os.OpenFile(
-		LOG_FILENAME,
+		filename,
 		os.O_CREATE|os.O_WRONLY|os.O_APPEND,
 		0666,
 	)
@@ -56,6 +56,10 @@ func NewLogger() (*Log, error) {
 			},
 			nil
 	}
+}
+
+func (l *Log) SetPrefix_Init() {
+	l.SetPrefix(PREFIX_INIT)
 }
 
 func (l *Log) SetPrefix_Debug() {

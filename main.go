@@ -5,10 +5,15 @@ import (
 
 	"net/http"
 
+	"github.com/msawangwan/unet/config"
 	"github.com/msawangwan/unet/db"
 	"github.com/msawangwan/unet/debug"
 	"github.com/msawangwan/unet/env"
 	"github.com/msawangwan/unet/service/gateway"
+)
+
+const (
+	configFile = "conf.json" // TODO: use flags
 )
 
 var (
@@ -21,15 +26,28 @@ func main() {
 	)
 
 	var (
+		conf  *config.Configuration
+		param *config.GameParameters
+	)
+
+	if conf, err = config.LoadConfigurationFile(configFile); err != nil {
+		log.Fatal("error loading configuration file:", err.Error())
+	}
+
+	if param, err = config.LoadGameParameters(conf.GameParametersFile); err != nil {
+		log.Fatal("error loading game parameters file:", err.Error())
+	}
+
+	var (
 		logger *debug.Log
 	)
 
-	logger, err = debug.NewLogger()
+	logger, err = debug.NewLogger(conf.LogFile)
 	if err != nil {
 		log.Fatal("error setting up logger")
-	} else {
-		logger.Printf("debug logger ready ...\n")
 	}
+
+	logger.SetPrefix_Init()
 
 	var (
 		redis   *db.RedisHandle
@@ -38,16 +56,12 @@ func main() {
 
 	redis, err = db.NewRedisHandle()
 	if err != nil {
-		logger.Fatal("error setting up redis")
-	} else {
-		logger.Printf("redis handle ready ...\n")
+		logger.Fatal("error setting up redis:", err.Error())
 	}
 
 	postgre, err = db.NewPostgreHandle()
 	if err != nil {
-		logger.Fatal("error pg")
-	} else {
-		logger.Printf("postgre handle ready ...\n")
+		logger.Fatal("error setting up postgre:", err.Error())
 	}
 
 	var (
@@ -55,12 +69,19 @@ func main() {
 	)
 
 	environment = env.New(
+		param,
 		redis,
 		postgre,
 		logger,
 	)
 
+	logger.Printf("debug logger ready ...\n")
+	logger.Printf("redis handle ready ...\n")
+	logger.Printf("postgre handle ready ...\n")
 	logger.Printf("all systems go ...\n")
 	logger.Printf("service listening and serving on %s ...\n", laddr)
-	logger.Fatal(http.ListenAndServe(laddr, gateway.NewMultiplexer(environment, nil)))
+
+	logger.SetPrefix_Debug()
+
+	logger.Fatal(http.ListenAndServe(conf.ListenAddress, gateway.NewMultiplexer(environment, nil)))
 }

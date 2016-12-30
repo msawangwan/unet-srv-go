@@ -2,31 +2,35 @@
 package env
 
 import (
+	"github.com/msawangwan/unet/config"
 	"github.com/msawangwan/unet/db"
 	"github.com/msawangwan/unet/debug"
 )
 
 // type Global encapsulates global handlers
 type Global struct {
+	*config.GameParameters
 	*db.RedisHandle
 	*db.PostgreHandle
 	*debug.Log
 }
 
 // NewGlobalHandle returns a new instance of a global context object
-func New(redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
+func New(param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
 	return &Global{
-		RedisHandle:   redis,
-		PostgreHandle: pg,
-		Log:           log,
+		GameParameters: param,
+		RedisHandle:    redis,
+		PostgreHandle:  pg,
+		Log:            log,
 	}
 }
 
 // NullGlobalHanldle  returns an empty global context
 func Null() *Global {
 	return &Global{
-		RedisHandle:   nil,
-		PostgreHandle: nil,
-		Log:           nil,
+		GameParameters: nil,
+		RedisHandle:    nil,
+		PostgreHandle:  nil,
+		Log:            nil,
 	}
 }

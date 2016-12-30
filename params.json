@@ -1,0 +1,6 @@
+{
+	"maximumAttemptsWhenSpawningNodes": 20,
+	"worldNodeCount": 9,
+	"worldScale": 50.0,
+	"nodeRadius": 1.2
+}
