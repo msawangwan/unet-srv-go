@@ -4,9 +4,11 @@ package db
 const (
 	// string
 	KEY_IS_LOADED_IN_MEMORY = "world:is_loaded:"
+	KEY_SESSION             = "session:"
 
 	// sets
-	KEY_NAMES_TAKEN = "profile_name:taken"
+	KEY_NAMES_TAKEN       = "profile_name:taken"
+	KEY_SESSION_AVAILABLE = "session:active"
 
 	// hash
 	KEY_WORLD_NODES = "world:valid_nodes:"

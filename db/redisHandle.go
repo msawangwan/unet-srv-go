@@ -83,3 +83,11 @@ func (rh *RedisHandle) CreateKey_IsWorldInMemory(key string) string {
 func (rh *RedisHandle) CreateKey_ValidWorldNodes(key string) string {
 	return fmt.Sprintf("%s%s", KEY_WORLD_NODES, key)
 }
+
+func (rh *RedisHandle) CreateKey_SessionKey(key string) string {
+	return fmt.Sprintf("%s%s", KEY_SESSION, key)
+}
+
+func (rh *RedisHandle) FetchKey_AllActiveSessions() string {
+	return fmt.Sprintf("%s", KEY_SESSION_AVAILABLE)
+}

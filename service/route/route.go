@@ -47,6 +47,16 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("api/profile/world/load"),
 				Handler: resource.Context{environment, handler.GenerateWorldData},
 			},
+			"session_fetch_all": &route{
+				Method:  "GET",
+				Pattern: cache("api/session/active"),
+				Handler: resource.Context{environment, handler.FetchAllActiveSessions},
+			},
+			"session_check_availablity": &route{
+				Method:  "POST",
+				Pattern: cache("api/session/availability"),
+				Handler: resource.Context{environment, handler.CheckSessionNameAvailable},
+			},
 		},
 	}
 
