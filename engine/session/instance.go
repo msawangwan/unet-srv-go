@@ -31,11 +31,22 @@ func Create(e *env.Global, sessionID string) (*Instance, error) {
 }
 
 func Join(e *env.Global, gamename string) (*Instance, error) {
+	conn, err := e.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		e.Put(conn)
+		e.SetPrefix_Debug()
+	}()
+
+	e.SetPrefix("[PLAYER CONNECTING] ")
 	e.Printf("attempting to join game: %s\n", gamename)
 
 	k := e.CreateKey_SessionInstance(gamename)
 
-	res, err := e.Cmd("HGETALL", k).Map()
+	res, err := conn.Cmd("HGETALL", k).Map()
 	if err != nil {
 		return nil, err
 	}
@@ -45,14 +56,26 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 	)
 
 	instance.SessionID = res["0"]
+
 	instance.Seed, err = strconv.ParseInt(res["1"], 10, 64)
-	if err != nil { // TODO: handle this better
-		return nil, err
-	}
-	instance.PlayerCount, err = strconv.ParseInt(res["2"], 10, 32)
 	if err != nil {
 		return nil, err
 	}
+
+	instance.PlayerCount, err = strconv.Atoi(res["2"])
+	if err != nil {
+		return nil, err
+	}
+
+	if instance.PlayerCount >= 2 {
+		e.Printf("player count greater than 2\n") // TODO: handle this
+	} else {
+		instance.PlayerCount += 1
+	}
+
+	conn.Cmd("HINCRBY", k, 2, 1)
+
+	e.Printf("joined game, number of players is: %d\n", instance.PlayerCount)
 
 	return instance, nil
 }
@@ -74,8 +97,6 @@ func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) error {
 		return err
 	}
 
-	e.Printf("started tx ...")
-
 	k := e.CreateKey_SessionInstance(i.SessionID)
 
 	conn.Cmd("HSET", k, 0, i.SessionID)
@@ -86,7 +107,6 @@ func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) error {
 		return err
 	}
 
-	e.Printf("executed tx ...")
 	e.Printf("session loaded into memory ...")
 
 	return nil

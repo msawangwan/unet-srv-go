@@ -1,6 +1,7 @@
 {
 	"listenAddress": ":8080",
 	"servicePrefix": "api",
+	"maxGameSessionsAllowed": 100,
 	"logFile": "debug.log",
 	"logDir": "",
 	"gameParametersFile": "params.json"

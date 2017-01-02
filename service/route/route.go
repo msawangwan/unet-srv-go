@@ -72,6 +72,11 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("api/session/new/join"),
 				Handler: resource.Context{environment, handler.JoinExistingSession},
 			},
+			"game/frame": &route{
+				Method:  "POST",
+				Pattern: cache("api/game/frame"),
+				Handler: resource.Context{environment, handler.GameFrameUpdate},
+			},
 		},
 	}
 

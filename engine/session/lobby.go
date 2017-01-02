@@ -10,6 +10,13 @@ type Lobby struct {
 }
 
 func (l *Lobby) PopulateLobbyList(e *env.Global) error {
+	defer func() {
+		e.SetPrefix_Debug()
+	}()
+
+	e.SetPrefix("[LOBBY INFO] ")
+	e.Printf("fetching lobby list ...\n")
+
 	k1 := e.FetchKey_AllActiveSessions()
 
 	r := e.Cmd(db.CMD_SMEMBERS, k1)
@@ -19,7 +26,7 @@ func (l *Lobby) PopulateLobbyList(e *env.Global) error {
 		sessions, _ := r.List()
 		l.Listing = make([]string, len(sessions))
 		for i, session := range sessions {
-			e.Printf(session)
+			e.Printf("active session: %s\n", session)
 			l.Listing[i] = session
 		}
 

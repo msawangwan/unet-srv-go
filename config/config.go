@@ -8,11 +8,12 @@ import (
 )
 
 type Configuration struct {
-	ListenAddress      string `json:"listenAddress"`
-	ServicePrefix      string `json:"servicePrefix"`
-	LogFile            string `json:"logFile"`
-	LogDir             string `json:"logDir"`
-	GameParametersFile string `json:"gameParametersFile"`
+	ListenAddress          string `json:"listenAddress"`
+	ServicePrefix          string `json:"servicePrefix"`
+	MaxGameSessionsAllowed int    `json:"maxGameSessionsAllowed"`
+	LogFile                string `json:"logFile"`
+	LogDir                 string `json:"logDir"`
+	GameParametersFile     string `json:"gameParametersFile"`
 }
 
 func LoadConfigurationFile(filename string) (*Configuration, error) {

@@ -65,6 +65,7 @@ func main() {
 	)
 
 	environment = env.New(
+		conf.MaxGameSessionsAllowed,
 		param,
 		redis,
 		postgre,

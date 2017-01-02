@@ -92,6 +92,10 @@ func (rh *RedisHandle) CreateKey_SessionInstance(key string) string {
 	return fmt.Sprintf("%s%s", KEY_SESSION_INSTANCE, key)
 }
 
+func (rh *RedisHandle) CreateKey_GameInstance(key string) string {
+	return fmt.Sprintf("%s%s", KEY_GAME_INSTANCE_ID, key)
+}
+
 func (rh *RedisHandle) FetchKey_AllActiveSessions() string {
 	return fmt.Sprintf("%s", KEY_SESSION_AVAILABLE)
 }

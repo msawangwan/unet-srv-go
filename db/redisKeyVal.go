@@ -13,6 +13,7 @@ const (
 	// hash
 	KEY_WORLD_NODES      = "world:valid_nodes:"
 	KEY_SESSION_INSTANCE = "session:active:instance:"
+	KEY_GAME_INSTANCE_ID = "game:instance:update:"
 )
 
 // redis default and placeholder values
