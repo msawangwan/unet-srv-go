@@ -8,6 +8,7 @@
 
 - http service for unity3d clients
   - keeps game state
+  - clients will poll for changes? unsure (websockets would be the ideal protocol to use but to complex given time constraints)
 
 * * *
 
