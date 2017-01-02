@@ -8,7 +8,8 @@ import (
 	"github.com/msawangwan/unet/service/exception"
 )
 
-func StartGame(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+// POST game/update/start
+func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		gi *game.Instance
 	)
@@ -22,6 +23,7 @@ func StartGame(e *env.Global, w http.ResponseWriter, r *http.Request) *exception
 	return nil
 }
 
+// POST game/update/frame
 func GameFrameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 
 	return nil

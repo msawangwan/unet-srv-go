@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net"
+
 	"encoding/json"
 	"net/http"
 
@@ -9,19 +11,20 @@ import (
 	"github.com/msawangwan/unet/service/exception"
 )
 
+// POST session/availability
 func CheckSessionNameAvailable(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
-		info *session.Key
 		la   *session.LobbyAvailability
+		skey *session.SessionKey
 	)
 
-	err := json.NewDecoder(r.Body).Decode(&info)
+	err := json.NewDecoder(r.Body).Decode(&skey)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
 	la = &session.LobbyAvailability{}
-	err = la.CheckAvailability(e, info.Info)
+	err = la.CheckAvailability(e, skey.BareFormat)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -31,15 +34,16 @@ func CheckSessionNameAvailable(e *env.Global, w http.ResponseWriter, r *http.Req
 	return nil
 }
 
+// POST session/new
 func CreateNewSession(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
-		info     *session.Key
 		instance *session.Instance
+		skey     *session.SessionKey
 	)
 
-	err := json.NewDecoder(r.Body).Decode(&info)
+	err := json.NewDecoder(r.Body).Decode(&skey)
 
-	instance, err = session.Create(e, info.Info)
+	instance, err = session.Create(e, skey.BareFormat)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -49,9 +53,11 @@ func CreateNewSession(e *env.Global, w http.ResponseWriter, r *http.Request) *ex
 	return nil
 }
 
+// POST session/new/open
 func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
+		skey     *session.SessionKey
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&instance)
@@ -59,26 +65,36 @@ func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	err = instance.LoadSessionInstanceIntoMemory(e)
+	key, err := instance.LoadSessionInstanceIntoMemory(e)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
+	} else {
+		if key != nil {
+			skey = &session.SessionKey{
+				BareFormat:  instance.SessionID,
+				RedisFormat: *key,
+			}
+		}
 	}
+
+	json.NewEncoder(w).Encode(skey)
 
 	return nil
 }
 
+// POST session/new/join
 func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
-		k        *session.Key
 		instance *session.Instance
+		skey     *session.SessionKey
 	)
 
-	err := json.NewDecoder(r.Body).Decode(&k)
+	err := json.NewDecoder(r.Body).Decode(&skey)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	instance, err = session.Join(e, k.Info)
+	instance, err = session.Join(e, skey.BareFormat)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -88,6 +104,40 @@ func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) 
 	return nil
 }
 
+// POST session/new/connect
+func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+	var (
+		instance *session.Instance
+		conn     *session.Connection
+	)
+
+	err := json.NewDecoder(r.Body).Decode(&instance)
+	if err != nil {
+		return &exception.Handler{err, err.Error(), 500}
+	}
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return &exception.Handler{err, err.Error(), 500}
+	}
+
+	result, key, err := instance.Connect(e, ip)
+	if err != nil {
+		return &exception.Handler{err, err.Error(), 500}
+	}
+
+	conn = &session.Connection{
+		IsConnected: result,
+		Address:     ip,
+		Message:     *key,
+	}
+
+	json.NewEncoder(w).Encode(conn)
+
+	return nil
+}
+
+// GET session/active
 func FetchAllActiveSessions(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		l *session.Lobby = &session.Lobby{}

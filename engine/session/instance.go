@@ -7,12 +7,19 @@ import (
 	"github.com/msawangwan/unet/env"
 )
 
+// Instance is an abstraction for a game session. A game session can be identified
+// by a SessionID (unique), a session Seed is used to generate the world
+// associated with the session and PlayerCount tracks the number of players
+// currently in the session.
 type Instance struct {
 	SessionID   string `json:"sessionID"`
 	Seed        int64  `json:"seed"`
 	PlayerCount int    `json:"playerCount"`
 }
 
+// Create takes a string and creates a key from it. The key is then cached
+// using a redis list which stores the sessionIDs of all currently active
+// sessions. It then returns a new session Instance struct.
 func Create(e *env.Global, sessionID string) (*Instance, error) {
 	k := e.FetchKey_AllActiveSessions()
 
@@ -21,6 +28,11 @@ func Create(e *env.Global, sessionID string) (*Instance, error) {
 		return nil, res.Err
 	}
 
+	defer func() {
+		e.SetPrefix_Debug()
+	}()
+
+	e.SetPrefix("[CREATE SESSION] ")
 	e.Printf("created a new session: %s\n", sessionID)
 
 	return &Instance{
@@ -30,6 +42,9 @@ func Create(e *env.Global, sessionID string) (*Instance, error) {
 		nil
 }
 
+// Join takes a string, which is used to identify a session instance, and then
+// returns that session Instance, increasing the session PlayerCount. Todo:
+// handle PlayerCount.
 func Join(e *env.Global, gamename string) (*Instance, error) {
 	conn, err := e.Get()
 	if err != nil {
@@ -44,9 +59,9 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 	e.SetPrefix("[PLAYER CONNECTING] ")
 	e.Printf("attempting to join game: %s\n", gamename)
 
-	k := e.CreateKey_SessionInstance(gamename)
+	k := e.CreateHashKey_Session(gamename)
 
-	res, err := conn.Cmd("HGETALL", k).Map()
+	res, err := conn.Cmd("HGETALL", k).Map() // TODO: should probably use a redis WATCHER to prevent race
 	if err != nil {
 		return nil, err
 	}
@@ -80,10 +95,48 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 	return instance, nil
 }
 
-func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) error {
+// Connect takes an ip (string) and adds it to a list of session connections
+func (i *Instance) Connect(e *env.Global, ip string) (bool, *string, error) {
 	conn, err := e.Get()
 	if err != nil {
-		return err
+		return false, nil, err
+	}
+
+	defer func() {
+		e.Put(conn)
+		e.SetPrefix_Debug()
+	}()
+
+	e.SetPrefix("[CONNECT TO SESSION] ")
+
+	k := e.CreateListKey_SessionConn(e.CreateHashKey_Session(i.SessionID))
+
+	e.Printf("key for connections: %s\n", k)
+	e.Printf("%s connecting to %s\n", ip, i.SessionID)
+
+	res, err := conn.Cmd("LRANGE", k, 0, -1).List()
+	if err != nil {
+		return false, nil, err
+	}
+
+	for _, v := range res {
+		if v == ip {
+			e.Printf("this connection is already connected to the session") // TODO: actually handle this
+			break
+		}
+	}
+
+	conn.Cmd("RPUSH", k, ip)
+
+	return true, &k, nil
+}
+
+// LoadSessionInstanceIntoMemory will add all the properties of a session
+// Instance struct into a redis store, which can later be accessed by
+func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) (*string, error) {
+	conn, err := e.Get()
+	if err != nil {
+		return nil, err
 	}
 
 	defer func() {
@@ -94,22 +147,22 @@ func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) error {
 	e.SetPrefix("[LOADING SESSION INTO MEMORY] ")
 
 	if err = conn.Cmd("MULTI").Err; err != nil { // start transaction
-		return err
+		return nil, err
 	}
 
-	k := e.CreateKey_SessionInstance(i.SessionID)
+	k := e.CreateHashKey_Session(i.SessionID)
 
 	conn.Cmd("HSET", k, 0, i.SessionID)
 	conn.Cmd("HSET", k, 1, i.Seed)
 	conn.Cmd("HSET", k, 2, i.PlayerCount)
 
 	if err = conn.Cmd("EXEC").Err; err != nil {
-		return err
+		return nil, err
 	}
 
 	e.Printf("session loaded into memory ...")
 
-	return nil
+	return &k, nil
 }
 
 func generateSeed() int64 {
@@ -118,4 +171,9 @@ func generateSeed() int64 {
 
 func generateSeedDebug() int64 {
 	return 1482284596187742126
+}
+
+type SessionKey struct {
+	BareFormat  string `json:"bareFormat"`
+	RedisFormat string `json:"redisFormat"`
 }

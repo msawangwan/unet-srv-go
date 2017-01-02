@@ -35,41 +35,7 @@ func NewRedisHandle() (*RedisHandle, error) {
 		Pool: conns,
 	}
 
-	err = redis.createNameDB() // TODO: remove this
-	if err != nil {
-		if err != ErrStoreAlreadyExists {
-			return nil, err
-		} else {
-			fmt.Errorf("%s\n", err) // TODO: print to console or handle?
-		}
-	}
-
 	return redis, nil
-}
-
-// createNameDB is a setup routine that cretes a store for user names in use
-func (rh *RedisHandle) createNameDB() error {
-	conn, err := rh.Get()
-	if err != nil {
-		return err
-	}
-	defer rh.Put(conn)
-
-	query := conn.Cmd(CMD_EXISTS, KEY_NAMES_TAKEN)
-	if query.Err != nil {
-		return query.Err
-	} else {
-		result, _ := query.Int()
-		if result == 1 {
-			return ErrStoreAlreadyExists
-		}
-	}
-
-	if err = conn.Cmd(CMD_SADD, KEY_NAMES_TAKEN, VAL_INIT).Err; err != nil { // TODO: verify this is valid syntax
-		return err
-	} else {
-		return nil
-	}
 }
 
 // CreateKey_IsWorldInMemory creates a key from a profile name that is used to
@@ -84,18 +50,22 @@ func (rh *RedisHandle) CreateKey_ValidWorldNodes(key string) string {
 	return fmt.Sprintf("%s%s", KEY_WORLD_NODES, key)
 }
 
-func (rh *RedisHandle) CreateKey_SessionKey(key string) string {
-	return fmt.Sprintf("%s%s", KEY_SESSION, key)
+// CreateHashKey_SessionKey takes a string (game/session name) and from it
+// creates and returns a redis hash key (session info).
+func (rh *RedisHandle) CreateHashKey_Session(key string) string {
+	return fmt.Sprintf("%s:%s", "session", key)
 }
 
-func (rh *RedisHandle) CreateKey_SessionInstance(key string) string {
-	return fmt.Sprintf("%s%s", KEY_SESSION_INSTANCE, key)
+// CreateListKey_SessionConn takes a string (a session key) and from it creates
+// and returns a redis list key (key for a linked list of conns).
+func (rh *RedisHandle) CreateListKey_SessionConn(key string) string {
+	return fmt.Sprintf("%s:%s", key, "conn")
 }
 
 func (rh *RedisHandle) CreateKey_GameInstance(key string) string {
-	return fmt.Sprintf("%s%s", KEY_GAME_INSTANCE_ID, key)
+	return fmt.Sprintf("%s:%s", "game:update", key)
 }
 
 func (rh *RedisHandle) FetchKey_AllActiveSessions() string {
-	return fmt.Sprintf("%s", KEY_SESSION_AVAILABLE)
+	return fmt.Sprintf("%s", "session:all:active")
 }
