@@ -116,9 +116,16 @@ func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Re
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
+	var (
+		ip string
+	)
+
+	ip = r.Header.Get("x-forwarded-for")
+	if len(ip) == 0 { // we're proxying through nginx so this should never hit, but just as a backup
+		ip, _, err = net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			return &exception.Handler{err, err.Error(), 500}
+		}
 	}
 
 	result, key, err := instance.Connect(e, ip)
