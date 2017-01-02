@@ -6,15 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
+	"unicode"
 )
 
-/* global db errors */
+// global db errors
 var (
 	ErrPreparedStatement error = errors.New("[db err][prepare] error attempting to create a prepared statement:")
 	ErrExecStatement     error = errors.New("[db err][exec] error attempting to execute a prepared statement:")
 )
 
-/* based on 'go wp', see: RFC 4122 */
+// CreateUUID is based on 'go wp' and RFC 4122
 func CreateUUID() string {
 	u := new([16]byte)
 
@@ -30,7 +32,18 @@ func CreateUUID() string {
 	return fmt.Sprintf("%x%x%x%x%x", u[0:4], u[4:6], u[6:8], u[8:10], u[10:]) // need to include hyphens
 }
 
-/* hash plaintext using SHA-1 */
+// Enctype will hash plaintext using SHA-1
 func Encrypt(plaintext string) string {
 	return fmt.Sprintf("%x", sha1.Sum([]byte(plaintext)))
+}
+
+// StripWhiteSpace is from a SO post and is untested and unless otherwise noted
+// -- not in use
+func StripWhiteSpace(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) {
+			return -1
+		}
+		return r
+	}, s)
 }

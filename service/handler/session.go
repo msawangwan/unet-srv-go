@@ -56,7 +56,7 @@ func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 
 	err := json.NewDecoder(r.Body).Decode(&instance)
 	if err != nil {
-		return &excepetion.Handler{err, err.Error(), 500}
+		return &exception.Handler{err, err.Error(), 500}
 	}
 
 	err = instance.LoadSessionInstanceIntoMemory(e)
@@ -67,7 +67,7 @@ func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 	return nil
 }
 
-func JoinExistingSession(e *env, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		k        *session.Key
 		instance *session.Instance

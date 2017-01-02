@@ -1,6 +1,8 @@
 package gateway
 
 import (
+	"strings"
+
 	"net/http"
 
 	"github.com/msawangwan/unet/env"
@@ -27,20 +29,29 @@ func NewMultiplexer(environment *env.Global, routeTable *route.Table) *Multiplex
 }
 
 func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var foundRoute bool = false
+	var (
+		foundRoute bool   = false
+		resource   string = r.URL.Path
+	)
 
-	for _, route := range mux.Endpoints {
-		if route.Pattern.MatchString(r.URL.Path) == true {
+	ps := strings.Split(resource, "/")
+
+	for path, route := range mux.Endpoints {
+		if route.Pattern.MatchString(resource) == true {
 			if route.Method == r.Method {
-				foundRoute = true
-				mux.Printf("found route: %s\n", r.URL.Path)
-				route.Handler.ServeHTTP(w, r)
-				break
+				rps := strings.Split(path, "/") // TODO: this might be too slow
+				if rps[len(rps)-1] == ps[len(ps)-1] {
+					foundRoute = true
+					mux.Printf("found route: %s\n", resource)
+					mux.Printf("serving resource at endpoint: %s\n", rps[len(rps)-1])
+					route.Handler.ServeHTTP(w, r)
+					break
+				}
 			}
 		}
 	}
 
 	if !foundRoute {
-		mux.Printf("invalid request: %s\n", r.URL.Path)
+		mux.Printf("invalid request: %s\n", resource)
 	}
 }
