@@ -57,6 +57,21 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("api/session/availability"),
 				Handler: resource.Context{environment, handler.CheckSessionNameAvailable},
 			},
+			"session_create_new": &route{
+				Method:  "POST",
+				Pattern: cache("api/session/new"),
+				Handler: resource.Context{environment, handler.CreateNewSession},
+			},
+			"session_make_active": &route{
+				Method:  "POST",
+				Pattern: cache("api/session/new/open"),
+				Handler: resource.Context{environment, handler.MakeSessionActive},
+			},
+			"session_join_existing": &route{
+				Method:  "POST",
+				Pattern: cache("api/session/new/join"),
+				Handler: resource.Context{environment, handler.JoinExistingSession},
+			},
 		},
 	}
 

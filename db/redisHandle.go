@@ -35,7 +35,7 @@ func NewRedisHandle() (*RedisHandle, error) {
 		Pool: conns,
 	}
 
-	err = redis.createNameDB()
+	err = redis.createNameDB() // TODO: remove this
 	if err != nil {
 		if err != ErrStoreAlreadyExists {
 			return nil, err
@@ -86,6 +86,10 @@ func (rh *RedisHandle) CreateKey_ValidWorldNodes(key string) string {
 
 func (rh *RedisHandle) CreateKey_SessionKey(key string) string {
 	return fmt.Sprintf("%s%s", KEY_SESSION, key)
+}
+
+func (rh *RedisHandle) CreateKey_SessionInstance(key string) string {
+	return fmt.Sprintf("%s%s", KEY_SESSION_INSTANCE, key)
 }
 
 func (rh *RedisHandle) FetchKey_AllActiveSessions() string {
