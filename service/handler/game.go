@@ -21,18 +21,22 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	var (
-		gu *game.Update
-	)
+	gl := game.UpdateLoop{skey.RedisFormat}
+	game.UpdateQueue <- gl
+	e.Printf("game loop queued: %s\n", skey.RedisFormat)
 
-	gu, err = game.NewInstance(e, skey.RedisFormat)
-	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
-	}
+	//var (
+	//	gu *game.Update
+	//)//
 
-	go gu.Start(e)
+	//gu, err = game.NewInstance(e, skey.RedisFormat)
+	//if err != nil {
+	//	return &exception.Handler{err, err.Error(), 500}
+	//}
 
 	json.NewEncoder(w).Encode(&game.Frame{})
+	//r.Close = true
+	//go gu.Start(e)
 
 	return nil
 }
