@@ -82,13 +82,16 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 		return nil, err
 	}
 
-	if instance.PlayerCount >= 2 {
-		e.Printf("player count greater than 2\n") // TODO: handle this
-	} else {
-		instance.PlayerCount += 1
+	e.Lock()
+	{
+		if instance.PlayerCount >= 2 {
+			e.Printf("player count greater than 2\n") // TODO: handle this
+		} else {
+			instance.PlayerCount += 1
+			conn.Cmd("HINCRBY", k, 2, 1)
+		}
 	}
-
-	conn.Cmd("HINCRBY", k, 2, 1)
+	e.Unlock()
 
 	e.Printf("joined game, number of players is: %d\n", instance.PlayerCount)
 
@@ -121,7 +124,7 @@ func (i *Instance) Connect(e *env.Global, ip string) (bool, *string, error) {
 
 	for _, v := range res {
 		if v == ip {
-			e.Printf("this connection is already connected to the session") // TODO: actually handle this
+			e.Printf("this connection is already connected to the session") // TODO: actually handle this, ie return instead of break
 			break
 		}
 	}
@@ -173,7 +176,7 @@ func generateSeedDebug() int64 {
 	return 1482284596187742126
 }
 
-type SessionKey struct {
+type Key struct {
 	BareFormat  string `json:"bareFormat"`
 	RedisFormat string `json:"redisFormat"`
 }

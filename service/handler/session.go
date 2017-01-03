@@ -15,7 +15,7 @@ import (
 func CheckSessionNameAvailable(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		la   *session.LobbyAvailability
-		skey *session.SessionKey
+		skey *session.Key
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
@@ -38,7 +38,7 @@ func CheckSessionNameAvailable(e *env.Global, w http.ResponseWriter, r *http.Req
 func CreateNewSession(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
-		skey     *session.SessionKey
+		skey     *session.Key
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
@@ -57,7 +57,7 @@ func CreateNewSession(e *env.Global, w http.ResponseWriter, r *http.Request) *ex
 func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
-		skey     *session.SessionKey
+		skey     *session.Key
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&instance)
@@ -70,7 +70,7 @@ func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 		return &exception.Handler{err, err.Error(), 500}
 	} else {
 		if key != nil {
-			skey = &session.SessionKey{
+			skey = &session.Key{
 				BareFormat:  instance.SessionID,
 				RedisFormat: *key,
 			}
@@ -86,7 +86,7 @@ func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
-		skey     *session.SessionKey
+		skey     *session.Key
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&skey)

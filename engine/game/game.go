@@ -1,55 +1,108 @@
 package game
 
 import (
+	"errors"
+	"log"
+	"runtime"
 	"time"
 
+	//	"github.com/msawangwan/unet/db"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/msawangwan/unet/env"
 )
 
-type Instance struct {
-	Key             string `json:"key"`
-	ActiveSessionID int    `json:"activeSessionID"`
-	Tick            int64  `json:"tick"`
+type Update struct {
+	SessionKey string `json:"sessionKey"`
+	Tick       int64  `json:"tick"`
 }
 
-func NewInstance(e *env.Global, id string) (*Instance, error) {
-	return &Instance{
-		Key:             e.CreateKey_GameInstance(id),
-		ActiveSessionID: e.AddSession(),
-		Tick:            0,
+func NewInstance(e *env.Global, sessionKey string) (*Update, error) {
+	if len(sessionKey) == 0 {
+		return nil, errors.New("failed to create an instance of update, invalid id (empty)")
+	}
+
+	conn, err := e.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	defer e.Put(conn)
+
+	if err = conn.Cmd("MULTI").Err; err != nil {
+		return nil, err
+	}
+
+	k := e.CreateHashKey_SessionGameUpdateLoop(sessionKey)
+
+	conn.Cmd("HSET", k, 0, sessionKey)
+	conn.Cmd("HSET", k, 1, 0)
+
+	if err = conn.Cmd("EXEC").Err; err != nil {
+		return nil, err
+	}
+
+	e.Sessions.Add(k, make(chan bool))
+
+	return &Update{
+		SessionKey: sessionKey,
+		Tick:       0,
 	}, nil
 }
 
-func (i *Instance) Start(e *env.Global) error {
-	conn, err := e.Get()
-	if err != nil {
-		return err
+func (up *Update) Start(e *env.Global) {
+	e.Printf("NEW LOOP STARTING %s\n", up.SessionKey)
+
+	k := e.CreateHashKey_SessionGameUpdateLoop(up.SessionKey)
+
+	kill := e.Sessions.Get(k)
+	if kill == nil {
+		e.Printf("got a nil chan\n")
 	}
 
-	defer func() {
-		e.Put(conn)
-		e.SetPrefix_Debug()
-	}()
-
-	e.SetPrefix("[SESSION START] ")
-
-	conn.Cmd("HSET", i.Key, 0, i.ActiveSessionID)
-	conn.Cmd("HSET", i.Key, 1, i.Tick)
-
-	go func() {
-		e.Printf("entering loop")
+	conn, err := e.Get()
+	if err != nil {
+		e.Printf("%s", err.Error())
+	}
+	defer e.Put(conn)
+	e.Add(1)
+	go func(c chan bool, r *redis.Client) {
+		log.Printf("start game loop for [%s]\n", up.SessionKey)
 		for {
-			e.Printf("top of loop")
+			log.Printf("top of loop for [%s]\n", up.SessionKey)
 			select {
-			case <-e.Sessions[i.ActiveSessionID].Terminate:
-				e.Printf("terminating session")
+			case shouldExit := <-c:
+				if shouldExit {
+					log.Printf("exit\n")
+					break
+				}
+				log.Printf("dont exit\n")
 			default:
-				e.Printf("incrementing tick in loop")
-				time.Sleep(150 * time.Millisecond)
-				e.Cmd("HSET", i.Key, 1, i.Tick)
+				log.Printf("ticked\n")
+				tick := r.Cmd("HINCRBY", k, 1, 1)
+				if tick.Err != nil {
+					log.Printf("%s\n", tick.Err)
+				}
+				time.Sleep(3000 * time.Millisecond)
 			}
+			runtime.Gosched()
 		}
-	}()
+		log.Printf("exited for loop\n")
+		//e.Put(conn)
+		e.Done()
+	}(kill, conn)
+
+	e.Wait()
+
+	e.Printf("returned\n")
+
+	//return nil
+}
+
+func (up *Update) End(e *env.Global, sessionKey string) error {
+	k := e.CreateHashKey_SessionGameUpdateLoop(sessionKey)
+
+	e.Sessions.Get(k) <- true
+	close(e.Sessions.Get(k))
 
 	return nil
 }

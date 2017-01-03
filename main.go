@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"runtime"
 
 	"net/http"
 
@@ -17,6 +18,8 @@ const (
 )
 
 func main() {
+	runtime.GOMAXPROCS(2)
+
 	var (
 		err error
 	)

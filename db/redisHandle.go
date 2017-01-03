@@ -56,6 +56,12 @@ func (rh *RedisHandle) CreateHashKey_Session(key string) string {
 	return fmt.Sprintf("%s:%s", "session", key)
 }
 
+// CreateHashKey_SessionGameUpdateLoop takes a string (a session key) and from
+// it creates a redis hash key (hash contains k/v pairs of game state)
+func (rh *RedisHandle) CreateHashKey_SessionGameUpdateLoop(key string) string {
+	return fmt.Sprintf("%s:%s", key, "game:update")
+}
+
 // CreateListKey_SessionConn takes a string (a session key) and from it creates
 // and returns a redis list key (key for a linked list of conns).
 func (rh *RedisHandle) CreateListKey_SessionConn(key string) string {
