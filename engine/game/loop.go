@@ -11,9 +11,10 @@ import (
  */
 
 var UpdateDispatcher chan chan UpdateLoop
+var UpdateQueue = make(chan UpdateLoop, 100)
 
 func init() {
-	StartDispatcher(50)
+	//StartDispatcher(50)
 }
 
 func StartDispatcher(maxLoops int) {
@@ -41,8 +42,6 @@ func StartDispatcher(maxLoops int) {
 type UpdateLoop struct {
 	Label string
 }
-
-var UpdateQueue = make(chan UpdateLoop, 100)
 
 type Looper struct {
 	ID          int

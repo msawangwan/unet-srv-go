@@ -9,6 +9,7 @@ import (
 	"github.com/msawangwan/unet/config"
 	"github.com/msawangwan/unet/db"
 	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet/engine/game"
 	"github.com/msawangwan/unet/env"
 	"github.com/msawangwan/unet/service/gateway"
 )
@@ -82,6 +83,11 @@ func main() {
 	logger.Printf("service listening and serving on %s ...\n", conf.ListenAddress)
 
 	logger.SetPrefix_Debug()
+
+	var t *game.UpdateMonitor
+	t = &game.UpdateMonitor{}
+
+	go t.Update(logger)
 
 	logger.Fatal(http.ListenAndServe(conf.ListenAddress, gateway.NewMultiplexer(environment, nil)))
 }

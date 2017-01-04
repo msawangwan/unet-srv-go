@@ -21,8 +21,9 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	gl := game.UpdateLoop{skey.RedisFormat}
-	game.UpdateQueue <- gl
+	//gl := game.UpdateLoop{skey.RedisFormat}
+	//game.UpdateQueue <- gl
+	go game.GameLoop(skey.RedisFormat)
 	e.Printf("game loop queued: %s\n", skey.RedisFormat)
 
 	//var (
