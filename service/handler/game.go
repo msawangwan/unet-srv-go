@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"time"
+
 	"encoding/json"
 	"net/http"
 
@@ -23,7 +25,13 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 
 	//gl := game.UpdateLoop{skey.RedisFormat}
 	//game.UpdateQueue <- gl
-	go game.GameLoop(skey.RedisFormat)
+	//go game.GameLoop(skey.RedisFormat)
+	g := game.NewUpdateInstance(skey.RedisFormat, e.Log)
+	go g.OnTick()
+	go func() {
+		time.Sleep(10 * time.Second)
+		g.OnDestroy()
+	}()
 	e.Printf("game loop queued: %s\n", skey.RedisFormat)
 
 	//var (

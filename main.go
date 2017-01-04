@@ -76,18 +76,24 @@ func main() {
 		logger,
 	)
 
+	var (
+		mainUpdate *game.UpdateHandler
+	)
+
+	mainUpdate = game.NewUpdateHandle(logger)
+
+	go mainUpdate.Monitor()
+
+	logger.Printf("main update loop running ...\n")
+	logger.Printf("game engine ready ...\n")
 	logger.Printf("debug logger ready ...\n")
 	logger.Printf("redis handle ready ...\n")
 	logger.Printf("postgre handle ready ...\n")
+	logger.Printf("init done ...\n")
 	logger.Printf("all systems go ...\n")
 	logger.Printf("service listening and serving on %s ...\n", conf.ListenAddress)
 
 	logger.SetPrefix_Debug()
-
-	var t *game.UpdateMonitor
-	t = &game.UpdateMonitor{}
-
-	go t.Update(logger)
 
 	logger.Fatal(http.ListenAndServe(conf.ListenAddress, gateway.NewMultiplexer(environment, nil)))
 }

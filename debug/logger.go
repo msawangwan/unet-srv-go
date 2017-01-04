@@ -58,14 +58,25 @@ func NewLogger(filename string) (*Log, error) {
 	}
 }
 
+func (l *Log) SetPrefixDefault() {
+	l.SetPrefix(PREFIX_DEBUG)
+}
+
+func (l *Log) SetPrefixInit() {
+	l.SetPrefix(PREFIX_INIT)
+}
+
+// TODO: deprecated, refactor and delete
 func (l *Log) SetPrefix_Init() {
 	l.SetPrefix(PREFIX_INIT)
 }
 
+// TODO: deprecated, refactor and delete
 func (l *Log) SetPrefix_Debug() {
 	l.SetPrefix(PREFIX_DEBUG)
 }
 
+// TODO: deprecated, refactor and delete
 func (l *Log) SetPrefix_DBActivity() {
 	l.SetPrefix(PREFIX_DB)
 }
