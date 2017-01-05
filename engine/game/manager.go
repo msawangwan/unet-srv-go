@@ -50,6 +50,8 @@ func (m *Manager) Remove(key string) (*Update, error) {
 	return m.lookUp(key, true)
 }
 
+func (m *Manager) atMaxCapacity() bool { return m.ActiveCount > m.MaxInstances }
+
 func (m *Manager) lookUp(key string, del bool) (*Update, error) {
 	var (
 		update *Update

@@ -22,7 +22,7 @@ type Update struct {
 	*debug.Log
 }
 
-func NewUpdateInstance(label string, log *debug.Log) *Update {
+func NewUpdateRoutine(label string, log *debug.Log) *Update {
 	return &Update{
 		Label:  label,
 		Timer:  time.NewTimer(kMaxDuration),

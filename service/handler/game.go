@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"time"
+	//	"time"
 
 	"encoding/json"
 	"net/http"
@@ -24,15 +24,19 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	loop = game.NewUpdateInstance(skey.RedisFormat, e.Log)
+	//	loop = game.NewUpdateRoutine(skey.RedisFormat, e.Log)
 
-	go loop.OnTick()
-	go func() { // TODO: debug only
-		time.Sleep(30 * time.Second)
-		loop.OnDestroy()
-	}()
-
-	e.Printf("server started a new game session: %s\n", skey.RedisFormat)
+	//	go loop.OnTick()
+	//	go func() { // TODO: debug only
+	//		time.Sleep(120 * time.Second)
+	//		loop.OnDestroy()
+	//	}()
+	loop, err = game.CreateNew(e.GameManager, skey.RedisFormat, e.Log)
+	if err != nil {
+		e.Printf("server failed to create new game %s\n", skey.RedisFormat)
+	} else {
+		e.Printf("server started update routine: %s\n", loop.Label)
+	}
 
 	json.NewEncoder(w).Encode(&game.Frame{})
 
