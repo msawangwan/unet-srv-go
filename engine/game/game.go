@@ -3,7 +3,8 @@ package game
 import (
 	"time"
 
-	"github.com/mediocregopher/radix.v2/redis"
+	//"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/msawangwan/unet/debug"
 )
 
@@ -20,34 +21,45 @@ type Update struct {
 	Timer  *time.Timer
 	Ticker *time.Ticker
 
-	Done chan bool
+	Error chan error
+	Done  chan bool
 
-	*redis.Client
+	//*redis.Client
+	*pool.Pool
 	*debug.Log
 }
 
-func NewUpdateRoutine(label string, key string, conn *redis.Client, log *debug.Log) *Update {
+func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log) *Update {
 	return &Update{
 		Label:       label,
 		InstanceKey: key,
 		Timer:       time.NewTimer(kMaxDuration),
 		Ticker:      time.NewTicker(kTick),
+		Error:       make(chan error),
 		Done:        make(chan bool),
-		Client:      conn,
-		Log:         log,
+		//Client:      conn,
+		Pool: conns,
+		Log:  log,
 	}
 }
 
 func (u *Update) OnTick() {
-	if err := u.Cmd("MULTI").Err; err != nil {
+	conn, err := u.Get()
+	if err != nil {
+		// TODO: send down error chan
+		u.Printf("%s\n", err.Error())
+	}
+	defer u.Put(conn)
+
+	if err := conn.Cmd("MULTI").Err; err != nil {
 		// TODO: send down error chan
 		u.Printf("%s\n", err.Error())
 	}
 
-	u.Cmd("HSET", u.InstanceKey, 0, u.Label)
-	u.Cmd("HSET", u.InstanceKey, 1, 0)
+	conn.Cmd("HSET", u.InstanceKey, 0, u.Label)
+	conn.Cmd("HSET", u.InstanceKey, 1, 0)
 
-	if err := u.Cmd("EXEC").Err; err != nil {
+	if err := conn.Cmd("EXEC").Err; err != nil {
 		// TODO: err chan
 		u.Printf("%s\n", err.Error())
 	}
@@ -63,7 +75,7 @@ func (u *Update) OnTick() {
 			u.Printf("tick: %s\n", u.Label)
 			u.SetPrefixDefault()
 
-			u.Cmd("HINCRBY", u.InstanceKey, 1, 1)
+			conn.Cmd("HINCRBY", u.InstanceKey, 1, 1)
 		case <-u.Done:
 			u.SetPrefix("[UPDATE][ON_DONE] ")
 			u.Printf("loop terminated: %s\n", u.Label)
@@ -72,7 +84,7 @@ func (u *Update) OnTick() {
 			u.Timer.Stop()
 			u.Ticker.Stop()
 
-			u.Client.Close() // TODO: should really return to the pool instead of closing
+			//u.Client.Close() // TODO: should really return to the pool instead of closing
 
 			return
 		}

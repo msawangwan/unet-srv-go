@@ -4,11 +4,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/mediocregopher/radix.v2/redis"
+	//"github.com/mediocregopher/radix.v2/redis"
+	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/msawangwan/unet/debug"
 )
 
-func CreateNew(label string, key string, manager *Manager, conn *redis.Client, log *debug.Log) (*Update, error) {
+func CreateNew(label string, key string, manager *Manager, conns *pool.Pool, log *debug.Log) (*Update, error) {
 	var (
 		loop *Update
 	)
@@ -23,7 +24,7 @@ func CreateNew(label string, key string, manager *Manager, conn *redis.Client, l
 		return nil, errors.New("max game instances running")
 	}
 
-	loop = NewUpdateRoutine(label, key, conn, log)
+	loop = NewUpdateRoutine(label, key, conns, log)
 	manager.Add(label, loop)
 
 	endAfter_debug := func() {

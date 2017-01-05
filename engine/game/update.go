@@ -15,11 +15,13 @@ const (
 	kReportInterval = 5000 * time.Millisecond
 )
 
+// type UpdateHandler is the central lo
 type UpdateHandler struct {
 	*debug.Log
 	kill chan os.Signal
 }
 
+// NewUpdateHandle returns a new instance of an update handler
 func NewUpdateHandle(log *debug.Log) *UpdateHandler {
 	return &UpdateHandler{
 		Log:  log,
@@ -27,11 +29,12 @@ func NewUpdateHandle(log *debug.Log) *UpdateHandler {
 	}
 }
 
-//func (uh *UpdateHandler) Run() {
-//	for {
-//
-//	}
-//}
+// Run is the core game loop, must be run via goroutine
+func (uh *UpdateHandler) Run() {
+	//for {
+	//
+	//	}
+}
 
 // Monitor prints and logs game engine stats, must be run via goroutine
 func (uh *UpdateHandler) Monitor() {
