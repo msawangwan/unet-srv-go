@@ -16,6 +16,7 @@ import (
 func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		skey *session.Key
+		loop *game.Update
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
@@ -23,47 +24,22 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	//gl := game.UpdateLoop{skey.RedisFormat}
-	//game.UpdateQueue <- gl
-	//go game.GameLoop(skey.RedisFormat)
-	g := game.NewUpdateInstance(skey.RedisFormat, e.Log)
-	go g.OnTick()
-	go func() {
-		time.Sleep(10 * time.Second)
-		g.OnDestroy()
+	loop = game.NewUpdateInstance(skey.RedisFormat, e.Log)
+
+	go loop.OnTick()
+	go func() { // TODO: debug only
+		time.Sleep(30 * time.Second)
+		loop.OnDestroy()
 	}()
-	e.Printf("game loop queued: %s\n", skey.RedisFormat)
 
-	//var (
-	//	gu *game.Update
-	//)//
-
-	//gu, err = game.NewInstance(e, skey.RedisFormat)
-	//if err != nil {
-	//	return &exception.Handler{err, err.Error(), 500}
-	//}
+	e.Printf("server started a new game session: %s\n", skey.RedisFormat)
 
 	json.NewEncoder(w).Encode(&game.Frame{})
-	//r.Close = true
-	//go gu.Start(e)
 
 	return nil
 }
 
 // POST game/update/frame
 func GameFrameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-
 	return nil
 }
-
-//func EndGameFrameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-//	var (
-//		skey *session.Key
-//	)
-//
-//	err := json.NewDecoder(r.Body).Decode(&skey)
-//	if err != nil {
-//		return &exception.Handler{err, err.Error(), 500}
-//	}
-
-//	e.SessionTable

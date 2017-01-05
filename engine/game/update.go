@@ -12,16 +12,6 @@ import (
 	"github.com/msawangwan/unet/debug"
 )
 
-func GameLoop(label string) {
-	log.Printf("started a new loop: %s\n", label)
-
-	tick := time.NewTicker(3000 * time.Millisecond)
-
-	for _ = range tick.C {
-		log.Printf("tick %s\n", label)
-	}
-}
-
 const (
 	kReportInterval = 5000 * time.Millisecond
 )
