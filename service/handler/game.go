@@ -24,14 +24,12 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	//	loop = game.NewUpdateRoutine(skey.RedisFormat, e.Log)
+	dbconn, err := e.Get() // TODO: where to do this? remember to cleanup
+	if err != nil {
+		return &exception.Handler{err, err.Error(), 500}
+	}
 
-	//	go loop.OnTick()
-	//	go func() { // TODO: debug only
-	//		time.Sleep(120 * time.Second)
-	//		loop.OnDestroy()
-	//	}()
-	loop, err = game.CreateNew(e.GameManager, skey.RedisFormat, e.Log)
+	loop, err = game.CreateNew(skey.RedisFormat, e.GameManager, dbconn, e.Log)
 	if err != nil {
 		e.Printf("server failed to create new game %s\n", skey.RedisFormat)
 	} else {

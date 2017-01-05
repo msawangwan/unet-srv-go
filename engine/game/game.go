@@ -3,6 +3,7 @@ package game
 import (
 	"time"
 
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/msawangwan/unet/debug"
 )
 
@@ -17,17 +18,20 @@ type Update struct {
 
 	Timer  *time.Timer
 	Ticker *time.Ticker
-	Done   chan bool
 
+	Done chan bool
+
+	*redis.Client
 	*debug.Log
 }
 
-func NewUpdateRoutine(label string, log *debug.Log) *Update {
+func NewUpdateRoutine(label string, conn *redis.Client, log *debug.Log) *Update {
 	return &Update{
 		Label:  label,
 		Timer:  time.NewTimer(kMaxDuration),
 		Ticker: time.NewTicker(kTick),
 		Done:   make(chan bool),
+		Client: conn,
 		Log:    log,
 	}
 }

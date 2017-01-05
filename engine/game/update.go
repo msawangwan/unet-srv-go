@@ -27,6 +27,13 @@ func NewUpdateHandle(log *debug.Log) *UpdateHandler {
 	}
 }
 
+//func (uh *UpdateHandler) Run() {
+//	for {
+//
+//	}
+//}
+
+// Monitor prints and logs game engine stats, must be run via goroutine
 func (uh *UpdateHandler) Monitor() {
 	var (
 		active int
