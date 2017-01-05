@@ -1,13 +1,12 @@
 package game
 
 import (
+	"errors"
 	"sync"
 )
 
-type ActiveTable map[string]*Update
-
 type Manager struct {
-	*ActiveTable
+	ActiveTable map[string]*Update
 
 	ActiveCount  int
 	MaxInstances int
@@ -17,7 +16,7 @@ type Manager struct {
 
 func NewGameManager(maxInstances int) *Manager {
 	return &Manager{
-		ActiveTable:  make(map[string]*Update),
+		ActiveTable:  make(map[string]*Update, maxInstances),
 		ActiveCount:  0,
 		MaxInstances: maxInstances,
 	}
@@ -44,11 +43,11 @@ func (m *Manager) Add(key string, update *Update) (int, error) {
 }
 
 func (m *Manager) Access(key string) (*Update, error) {
-	return lookUp(key, false)
+	return m.lookUp(key, false)
 }
 
-func (n *Manager) Remove(key string) (*Update, error) {
-	return lookUp(key, true)
+func (m *Manager) Remove(key string) (*Update, error) {
+	return m.lookUp(key, true)
 }
 
 func (m *Manager) lookUp(key string, del bool) (*Update, error) {

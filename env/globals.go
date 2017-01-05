@@ -7,6 +7,7 @@ import (
 	"github.com/msawangwan/unet/config"
 	"github.com/msawangwan/unet/db"
 	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet/engine/game"
 )
 
 // type Global encapsulates global handlers
@@ -16,7 +17,8 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	Sessions *SessionTable
+	//Sessions *SessionTable
+	GameManager *game.Manager
 
 	sync.Mutex
 	sync.WaitGroup
@@ -30,7 +32,8 @@ func New(maxSessionsPerHost int, param *config.GameParameters, redis *db.RedisHa
 		PostgreHandle:  pg,
 		Log:            log,
 
-		Sessions: NewSessionTable(maxSessionsPerHost),
+		GameManager: game.NewGameManager(maxSessionsPerHost),
+		//	Sessions: NewSessionTable(maxSessionsPerHost),
 	}
 }
 

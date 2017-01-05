@@ -1,7 +1,6 @@
 package game
 
 import (
-	"log"
 	"os"
 	"runtime"
 	"syscall"
