@@ -92,7 +92,7 @@ func main() {
 		mainUpdate *game.UpdateHandler
 	)
 
-	mainUpdate = game.NewUpdateHandle(logger)
+	mainUpdate = game.NewUpdateHandle(environment.Pool, logger)
 
 	go mainUpdate.Monitor()
 

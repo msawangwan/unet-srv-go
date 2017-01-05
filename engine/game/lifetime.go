@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	//"github.com/mediocregopher/radix.v2/redis"
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/msawangwan/unet/debug"
 )
@@ -57,7 +56,7 @@ func EndActive(label string, key string, manager *Manager, log *debug.Log) (*Upd
 	log.Printf("*** *** ***")
 	log.SetPrefixDefault()
 
-	loop.OnDestroy() // close the loop and call clean up functions ...
+	loop.OnDestroy() // close the loop and clean up ...
 
 	return loop, nil
 }

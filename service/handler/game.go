@@ -22,11 +22,6 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	//dbconn, err := e.Get() // TODO: don't do this here
-	//if err != nil {
-	//	return &exception.Handler{err, err.Error(), 500}
-	//}
-
 	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat) // TODO: rename to game state or something better
 
 	loop, err = game.CreateNew(skey.RedisFormat, rkey, e.GameManager, e.Pool, e.Log)

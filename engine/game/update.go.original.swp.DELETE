@@ -16,7 +16,7 @@ const (
 	kReportInterval = 5000 * time.Millisecond
 )
 
-// type UpdateHandler is the central game loop
+// type UpdateHandler is the central lo
 type UpdateHandler struct {
 	*pool.Pool
 	*debug.Log
@@ -37,12 +37,7 @@ func NewUpdateHandle(conns *pool.Pool, log *debug.Log) *UpdateHandler {
 // Run is the core game loop, must be run via goroutine
 func (uh *UpdateHandler) Run() {
 	for {
-		select {
-		case err := <-uh.Error:
-			uh.SetPrefix("[UPDATE HANDLER][MAIN][ERROR] ")
-			uh.Printf("%s\n", err.Error())
-			uh.SetPrefixDefault()
-		}
+
 	}
 }
 
