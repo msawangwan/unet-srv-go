@@ -82,6 +82,11 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("api/game/update/start"),
 				Handler: resource.Context{environment, handler.StartGameUpdate},
 			},
+			"game/update/enter": &route{
+				Method:  "POST",
+				Pattern: cache("api/game/update/enter"),
+				Handler: resource.Context{environment, handler.EnterGameUpdate},
+			},
 			"game/update/frame": &route{
 				Method:  "POST",
 				Pattern: cache("api/game/update/frame"),

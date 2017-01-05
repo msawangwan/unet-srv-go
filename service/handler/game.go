@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/msawangwan/unet/env"
+
 	"github.com/msawangwan/unet/engine/game"
 	"github.com/msawangwan/unet/engine/session"
-	"github.com/msawangwan/unet/env"
+
 	"github.com/msawangwan/unet/service/exception"
 )
 
@@ -29,6 +31,32 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		e.Printf("server failed to create new game %s\n", skey.RedisFormat)
 	} else {
 		e.Printf("server started update routine: %s\n", loop.Label)
+	}
+
+	json.NewEncoder(w).Encode(&game.Frame{})
+
+	return nil
+}
+
+// POST game/update/enter
+func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+	var (
+		skey *session.Key
+		loop *game.Update
+	)
+
+	err := json.NewDecoder(r.Body).Decode(&skey)
+	if err != nil {
+		return throw(err, err.Error(), 500)
+	}
+
+	//	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat)
+
+	loop, err = game.EnterExisting(skey.RedisFormat, e.GameManager, e.Log)
+	if err != nil {
+		return throw(err, err.Error(), 500)
+	} else {
+		e.Printf("joined an existing game on the server: %s\n", loop.Label)
 	}
 
 	json.NewEncoder(w).Encode(&game.Frame{})

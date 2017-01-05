@@ -4,6 +4,8 @@ import (
 	"errors"
 
 	"net/http"
+
+	"github.com/msawangwan/unet/service/exception"
 )
 
 var (
@@ -16,4 +18,8 @@ func checkBody(r *http.Request) error {
 	} else {
 		return nil
 	}
+}
+
+func throw(err error, msg string, code int) *exception.Handler {
+	return &exception.Handler{err, msg, code}
 }

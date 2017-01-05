@@ -1,7 +1,10 @@
 package game
 
 import (
+	"sync"
 	"time"
+
+	"encoding/json"
 
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/msawangwan/unet/debug"
@@ -13,9 +16,16 @@ const (
 	kTick        = 2500 * time.Millisecond
 )
 
+const (
+	kMaxPlayers = 2
+)
+
 type Update struct {
 	Label       string `json:"label"`
 	InstanceKey string
+	playerCount int
+
+	Players []string
 
 	Timer  *time.Timer
 	Ticker *time.Ticker
@@ -25,12 +35,15 @@ type Update struct {
 
 	*pool.Pool
 	*debug.Log
+
+	sync.Mutex
 }
 
-func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log) *Update {
-	return &Update{
+func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log) (*Update, error) {
+	update := &Update{
 		Label:       label,
 		InstanceKey: key,
+		Players:     make([]string, 10), // TODO: should be 2
 		Timer:       time.NewTimer(kMaxDuration),
 		Ticker:      time.NewTicker(kTick),
 		Error:       make(chan error),
@@ -38,28 +51,68 @@ func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log
 		Pool:        conns,
 		Log:         log,
 	}
+
+	conn, err := update.Get()
+	if err != nil {
+		return nil, err
+	}
+	defer update.Put(conn)
+
+	if err := conn.Cmd("MULTI").Err; err != nil {
+		return nil, err
+	}
+
+	conn.Cmd("HSET", update.InstanceKey, "game-name", update.Label)
+	conn.Cmd("HSET", update.InstanceKey, "frame", 0)
+
+	if err := conn.Cmd("EXEC").Err; err != nil {
+		return nil, err
+	}
+
+	return update, nil
+}
+
+func (u *Update) Enter(player string) error {
+	if u.playerCount >= kMaxPlayers {
+		u.Printf("more than 2 players") // TODO: handle
+	}
+
+	conn, err := u.Get()
+	if err != nil {
+		return err
+	}
+	defer u.Put(conn)
+
+	if err := conn.Cmd("MULTI").Err; err != nil {
+		return err
+	}
+
+	var all []byte
+
+	u.Lock()
+	{
+		u.Players = append(u.Players, player)
+		all, err = json.Marshal(u.Players)
+	}
+	u.Unlock()
+
+	conn.Cmd("HSET", u.InstanceKey, "player-count", u.playerCount)
+	conn.Cmd("HSET", u.InstanceKey, "players", string(all))
+
+	if err := conn.Cmd("EXEC").Err; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (u *Update) OnTick() {
 	conn, err := u.Get()
 	if err != nil {
-		// TODO: send down error chan
-		u.Printf("%s\n", err.Error())
+		u.sendErr(err)
+		return
 	}
 	defer u.Put(conn)
-
-	if err := conn.Cmd("MULTI").Err; err != nil {
-		// TODO: send down error chan
-		u.Printf("%s\n", err.Error())
-	}
-
-	conn.Cmd("HSET", u.InstanceKey, 0, u.Label)
-	conn.Cmd("HSET", u.InstanceKey, 1, 0)
-
-	if err := conn.Cmd("EXEC").Err; err != nil {
-		// TODO: err chan
-		u.Printf("%s\n", err.Error())
-	}
 
 	for {
 		select {
@@ -72,7 +125,7 @@ func (u *Update) OnTick() {
 			u.Printf("tick: %s\n", u.Label)
 			u.SetPrefixDefault()
 
-			conn.Cmd("HINCRBY", u.InstanceKey, 1, 1)
+			conn.Cmd("HINCRBY", u.InstanceKey, "frame", 1)
 		case <-u.Done:
 			u.SetPrefix("[UPDATE][ON_DONE] ")
 			u.Printf("loop terminated: %s\n", u.Label)
@@ -89,4 +142,9 @@ func (u *Update) OnTick() {
 func (u *Update) OnDestroy() {
 	u.Done <- true
 	close(u.Done)
+}
+
+func (u *Update) sendErr(err error) {
+	u.Error <- err
+	close(u.Error)
 }
