@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	//	"runtime"
 
 	"net/http"
@@ -15,22 +16,33 @@ import (
 )
 
 const (
-	configFile = "conf.json" // TODO: use flags
+	kConfigPathFallback = "conf.json" // TODO: use flags instead of args and const
 )
 
-func main() {
-	//	runtime.GOMAXPROCS(2)
+var (
+	configPath string
+	err        error
+)
 
-	var (
-		err error
-	)
+func init() {
+	//	runtime.GOMAXPROCS(2)
+}
+
+func main() {
+	args := os.Args[1:]
+
+	if len(args) == 1 {
+		configPath = args[0]
+	} else {
+		configPath = kConfigPathFallback
+	}
 
 	var (
 		conf  *config.Configuration
 		param *config.GameParameters
 	)
 
-	if conf, err = config.LoadConfigurationFile(configFile); err != nil {
+	if conf, err = config.LoadConfigurationFile(configPath); err != nil {
 		log.Fatal("error loading configuration file:", err.Error())
 	}
 
@@ -86,14 +98,17 @@ func main() {
 
 	logger.Printf("main update loop running ...\n")
 	logger.Printf("game engine ready ...\n")
+	logger.Printf("game manager ready ...\n")
 	logger.Printf("debug logger ready ...\n")
 	logger.Printf("redis handle ready ...\n")
 	logger.Printf("postgre handle ready ...\n")
+
 	logger.Printf("init done ...\n")
 	logger.Printf("all systems go ...\n")
+
 	logger.Printf("service listening and serving on %s ...\n", conf.ListenAddress)
 
-	logger.SetPrefix_Debug()
+	logger.SetPrefixDefault()
 
 	logger.Fatal(http.ListenAndServe(conf.ListenAddress, gateway.NewMultiplexer(environment, nil)))
 }
