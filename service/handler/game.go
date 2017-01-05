@@ -1,8 +1,6 @@
 package handler
 
 import (
-	//	"time"
-
 	"encoding/json"
 	"net/http"
 
@@ -24,12 +22,14 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	dbconn, err := e.Get() // TODO: where to do this? remember to cleanup
+	dbconn, err := e.Get() // TODO: don't do this here
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	loop, err = game.CreateNew(skey.RedisFormat, e.GameManager, dbconn, e.Log)
+	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat) // TODO: rename to game state or something better
+
+	loop, err = game.CreateNew(skey.RedisFormat, rkey, e.GameManager, dbconn, e.Log)
 	if err != nil {
 		e.Printf("server failed to create new game %s\n", skey.RedisFormat)
 	} else {
@@ -37,6 +37,29 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 	}
 
 	json.NewEncoder(w).Encode(&game.Frame{})
+
+	return nil
+}
+
+// POST game/update/kill
+func KillGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+	var (
+		skey *session.Key
+	)
+
+	// TODO: need robust validation
+
+	err := json.NewDecoder(r.Body).Decode(&skey)
+	if err != nil {
+		return &exception.Handler{err, err.Error(), 500}
+	}
+
+	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat) // TODO: rename to game state or something better
+
+	_, err = game.EndActive(skey.RedisFormat, rkey, e.GameManager, e.Log)
+	if err != nil {
+		return &exception.Handler{err, err.Error(), 500}
+	}
 
 	return nil
 }

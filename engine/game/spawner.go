@@ -8,7 +8,7 @@ import (
 	"github.com/msawangwan/unet/debug"
 )
 
-func CreateNew(label string, manager *Manager, conn *redis.Client, log *debug.Log) (*Update, error) {
+func CreateNew(label string, key string, manager *Manager, conn *redis.Client, log *debug.Log) (*Update, error) {
 	var (
 		loop *Update
 	)
@@ -23,17 +23,40 @@ func CreateNew(label string, manager *Manager, conn *redis.Client, log *debug.Lo
 		return nil, errors.New("max game instances running")
 	}
 
-	loop = NewUpdateRoutine(label, conn, log)
+	loop = NewUpdateRoutine(label, key, conn, log)
+	manager.Add(label, loop)
+
 	endAfter_debug := func() {
-		time.Sleep(120 * time.Second)
+		time.Sleep(30 * time.Second)
+
 		log.SetPrefix("[GAME ROUTINE END] ")
+		log.Printf("*** *** ***")
 		log.Printf("terminated routine %s\n", loop.Label)
+		log.Printf("*** *** ***")
 		log.SetPrefixDefault()
+
 		loop.OnDestroy()
 	}
 
 	go loop.OnTick()
 	go endAfter_debug()
+
+	return loop, nil
+}
+
+func EndActive(label string, key string, manager *Manager, log *debug.Log) (*Update, error) {
+	loop, err := manager.Remove(label)
+	if err != nil {
+		return nil, err
+	}
+
+	log.SetPrefix("[GAME ROUTINE END] ")
+	log.Printf("*** *** ***")
+	log.Printf("terminated routine %s\n", loop.Label)
+	log.Printf("*** *** ***")
+	log.SetPrefixDefault()
+
+	loop.OnDestroy() // close the loop and call clean up functions ...
 
 	return loop, nil
 }
