@@ -7,6 +7,12 @@ import (
 	"github.com/msawangwan/unet/env"
 )
 
+const (
+	kSessionID          = "session_id"
+	kSessionSeed        = "session_seed"
+	kSessionPlayerCount = "session_player_count"
+)
+
 // Instance is an abstraction for a game session. A game session can be identified
 // by a SessionID (unique), a session Seed is used to generate the world
 // associated with the session and PlayerCount tracks the number of players
@@ -32,7 +38,7 @@ func Create(e *env.Global, sessionID string) (*Instance, error) {
 		e.SetPrefix_Debug()
 	}()
 
-	e.SetPrefix("[CREATE SESSION] ")
+	e.SetPrefix("[SESSION][CREATE] ")
 	e.Printf("created a new session: %s\n", sessionID)
 
 	return &Instance{
@@ -56,7 +62,7 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 		e.SetPrefix_Debug()
 	}()
 
-	e.SetPrefix("[PLAYER CONNECTING] ")
+	e.SetPrefix("[SESSION][JOIN] ")
 	e.Printf("attempting to join game: %s\n", gamename)
 
 	k := e.CreateHashKey_Session(gamename)
@@ -70,14 +76,14 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 		instance *Instance = &Instance{}
 	)
 
-	instance.SessionID = res["0"]
+	instance.SessionID = res[kSessionID]
 
-	instance.Seed, err = strconv.ParseInt(res["1"], 10, 64)
+	instance.Seed, err = strconv.ParseInt(res[kSessionSeed], 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	instance.PlayerCount, err = strconv.Atoi(res["2"])
+	instance.PlayerCount, err = strconv.Atoi(res[kSessionPlayerCount])
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +94,7 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 			e.Printf("player count greater than 2\n") // TODO: handle this
 		} else {
 			instance.PlayerCount += 1
-			conn.Cmd("HINCRBY", k, 2, 1)
+			conn.Cmd("HINCRBY", k, kSessionPlayerCount, 1)
 		}
 	}
 	e.Unlock()
@@ -110,7 +116,7 @@ func (i *Instance) Connect(e *env.Global, ip string) (bool, *string, error) {
 		e.SetPrefix_Debug()
 	}()
 
-	e.SetPrefix("[CONNECT TO SESSION] ")
+	e.SetPrefix("[SESSION][CONNECT] ")
 
 	k := e.CreateListKey_SessionConn(e.CreateHashKey_Session(i.SessionID))
 
@@ -124,7 +130,7 @@ func (i *Instance) Connect(e *env.Global, ip string) (bool, *string, error) {
 
 	for _, v := range res {
 		if v == ip {
-			e.Printf("this connection is already connected to the session") // TODO: actually handle this, ie return instead of break
+			e.Printf("%s is already connected to the session\n", ip) // TODO: actually handle this, ie return instead of break
 			break
 		}
 	}
@@ -147,7 +153,7 @@ func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) (*string, error)
 		e.SetPrefix_Debug()
 	}()
 
-	e.SetPrefix("[LOADING SESSION INTO MEMORY] ")
+	e.SetPrefix("[SESSION][MAKE_ACTIVE] ")
 
 	if err = conn.Cmd("MULTI").Err; err != nil { // start transaction
 		return nil, err
@@ -155,15 +161,53 @@ func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) (*string, error)
 
 	k := e.CreateHashKey_Session(i.SessionID)
 
-	conn.Cmd("HSET", k, 0, i.SessionID)
-	conn.Cmd("HSET", k, 1, i.Seed)
-	conn.Cmd("HSET", k, 2, i.PlayerCount)
+	conn.Cmd("HSET", k, kSessionID, i.SessionID)
+	conn.Cmd("HSET", k, kSessionSeed, i.Seed)
+	conn.Cmd("HSET", k, kSessionPlayerCount, i.PlayerCount)
 
 	if err = conn.Cmd("EXEC").Err; err != nil {
 		return nil, err
 	}
 
 	e.Printf("session loaded into memory ...")
+
+	return &k, nil
+}
+
+func (i *Instance) KeyFromInstance(e *env.Global) (*string, error) {
+	conn, err := e.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		e.Put(conn)
+		e.SetPrefixDefault()
+	}()
+
+	e.SetPrefix("[SESSION][KEY_FROM_INSTANCE] ")
+
+	k := e.CreateHashKey_Session(i.SessionID)
+
+	//	if err = conn.Cmd("MULTI").Err; err  != nil { // TODO: use watch
+	//		return nil, err
+	//	}
+
+	count, err := conn.Cmd("HGET", k, kSessionPlayerCount).Int()
+	if err != nil {
+		return nil, err
+	}
+
+	if count >= 2 {
+		e.Printf("session at max capacity (2): %d\n", count)
+	}
+
+	count += 1
+
+	err = conn.Cmd("HSET", k, kSessionPlayerCount, count).Err
+	if err != nil {
+		return nil, err // TODO: rollback??
+	}
 
 	return &k, nil
 }

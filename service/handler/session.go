@@ -104,6 +104,35 @@ func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) 
 	return nil
 }
 
+// POST session/new/instance/key
+func KeyFromInstance(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+	var (
+		instance *session.Instance
+		skey     *session.Key
+	)
+
+	err := json.NewDecoder(r.Body).Decode(&instance)
+	if err != nil {
+		return throw(err, err.Error(), 500)
+	}
+
+	key, err := instance.KeyFromInstance(e)
+	if err != nil {
+		return throw(err, err.Error(), 500)
+	} else {
+		if key != nil {
+			skey = &session.Key{
+				BareFormat:  instance.SessionID,
+				RedisFormat: *key,
+			}
+		}
+	}
+
+	json.NewEncoder(w).Encode(skey)
+
+	return nil
+}
+
 // POST session/new/connect
 func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (

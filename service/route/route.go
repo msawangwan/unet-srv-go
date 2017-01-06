@@ -77,6 +77,11 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("api/session/new/connect"),
 				Handler: resource.Context{environment, handler.EstablishSessionConnection},
 			},
+			"session/new/instance/key": &route{
+				Method:  "POST",
+				Pattern: cache("api/session/new/instance/key"),
+				Handler: resource.Context{environment, handler.KeyFromInstance},
+			},
 			"game/update/start": &route{
 				Method:  "POST",
 				Pattern: cache("api/game/update/start"),

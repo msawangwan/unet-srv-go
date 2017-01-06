@@ -25,7 +25,7 @@ type Update struct {
 	InstanceKey string
 	playerCount int
 
-	Players []string
+	Players [10]string
 
 	Timer  *time.Timer
 	Ticker *time.Ticker
@@ -43,7 +43,6 @@ func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log
 	update := &Update{
 		Label:       label,
 		InstanceKey: key,
-		Players:     make([]string, 10), // TODO: should be 2
 		Timer:       time.NewTimer(kMaxDuration),
 		Ticker:      time.NewTicker(kTick),
 		Error:       make(chan error),
@@ -91,13 +90,21 @@ func (u *Update) Enter(player string) error {
 
 	u.Lock()
 	{
-		u.Players = append(u.Players, player)
+		n := len(u.Players)
+		if (n + 1) <= cap(u.Players) {
+			u.Players[n] = "a player" + string(n)
+		}
+
+		//u.Players = append(u.Players, player)
 		all, err = json.Marshal(u.Players)
+		u.Printf("players as byte arr: %v\n", all)
+		u.Printf("players as slice: %s\n", string(all))
+		u.Printf("players as slice: %s\n", string(all[:]))
 	}
 	u.Unlock()
 
 	conn.Cmd("HSET", u.InstanceKey, "player-count", u.playerCount)
-	conn.Cmd("HSET", u.InstanceKey, "players", string(all))
+	//	conn.Cmd("HSET", u.InstanceKey, "players", string(all[:]))
 
 	if err := conn.Cmd("EXEC").Err; err != nil {
 		return err

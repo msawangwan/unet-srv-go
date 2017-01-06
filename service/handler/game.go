@@ -47,7 +47,7 @@ func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
 	if err != nil {
-		return throw(err, err.Error(), 500)
+		return throw(err, "MISSING KEY", 500)
 	}
 
 	//	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat)
