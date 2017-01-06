@@ -136,11 +136,13 @@ func KeyFromInstance(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 // POST session/new/connect
 func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
-		instance *session.Instance
-		conn     *session.Connection
+		owner *session.Owner
+		//	instance *session.Instance
+		conn *session.Connection
 	)
 
-	err := json.NewDecoder(r.Body).Decode(&instance)
+	//	err := json.NewDecoder(r.Body).Decode(&instance)
+	err := json.NewDecoder(r.Body).Decode(&owner)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -157,7 +159,8 @@ func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	result, key, err := instance.Connect(e, ip)
+	//	result, key, err := instance.Connect(e, ip)
+	result, key, err := session.EstablishConnection(e, owner.PlayerName, ip)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}

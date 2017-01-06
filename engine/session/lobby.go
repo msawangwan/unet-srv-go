@@ -14,7 +14,7 @@ func (l *Lobby) PopulateLobbyList(e *env.Global) error {
 		e.SetPrefix_Debug()
 	}()
 
-	e.SetPrefix("[LOBBY INFO] ")
+	e.SetPrefix("[LOBBY][INFO] ")
 	e.Printf("fetching lobby list ...\n")
 
 	k1 := e.FetchKey_AllActiveSessions()

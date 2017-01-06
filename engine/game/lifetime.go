@@ -46,7 +46,7 @@ func CreateNew(label string, key string, manager *Manager, conns *pool.Pool, log
 		loop.OnDestroy()
 	}
 
-	if err = loop.Enter("some_player_name"); err != nil {
+	if err = loop.Enter(); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +72,7 @@ func EnterExisting(label string, manager *Manager, log *debug.Log) (*Update, err
 	if err != nil {
 		return nil, err
 	} else {
-		if err = loop.Enter("another_player_name"); err != nil {
+		if err = loop.Enter(); err != nil {
 			return nil, err
 		}
 

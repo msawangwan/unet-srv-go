@@ -17,7 +17,14 @@ const (
 )
 
 const (
-	kMaxPlayers = 2
+	kMaxPlayers = 10 // 10 for debug
+)
+
+const (
+	kGameName    = "game_name"
+	kFrame       = "frame"
+	kPlayerCount = "game_player_count"
+	kPlayerList  = "player_list"
 )
 
 type Update struct {
@@ -25,7 +32,7 @@ type Update struct {
 	InstanceKey string
 	playerCount int
 
-	Players [10]string
+	Players []string
 
 	Timer  *time.Timer
 	Ticker *time.Ticker
@@ -43,6 +50,7 @@ func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log
 	update := &Update{
 		Label:       label,
 		InstanceKey: key,
+		Players:     make([]string, 0, kMaxPlayers),
 		Timer:       time.NewTimer(kMaxDuration),
 		Ticker:      time.NewTicker(kTick),
 		Error:       make(chan error),
@@ -61,8 +69,9 @@ func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log
 		return nil, err
 	}
 
-	conn.Cmd("HSET", update.InstanceKey, "game-name", update.Label)
-	conn.Cmd("HSET", update.InstanceKey, "frame", 0)
+	conn.Cmd("HSET", update.InstanceKey, kGameName, update.Label)
+	conn.Cmd("HSET", update.InstanceKey, kFrame, 0)
+	//	conn.Cmd("HSET", update.InstanceKey, kPlayerCount, 1)
 
 	if err := conn.Cmd("EXEC").Err; err != nil {
 		return nil, err
@@ -71,7 +80,7 @@ func NewUpdateRoutine(label string, key string, conns *pool.Pool, log *debug.Log
 	return update, nil
 }
 
-func (u *Update) Enter(player string) error {
+func (u *Update) Enter() error {
 	if u.playerCount >= kMaxPlayers {
 		u.Printf("more than 2 players") // TODO: handle
 	}
@@ -91,20 +100,29 @@ func (u *Update) Enter(player string) error {
 	u.Lock()
 	{
 		n := len(u.Players)
+
 		if (n + 1) <= cap(u.Players) {
-			u.Players[n] = "a player" + string(n)
+			u.Players = append(u.Players, "A PLAYER "+string(n))
+			u.playerCount += 1
+
+			if n != u.playerCount {
+				u.Printf("playercount mismatch, expected %d got %d\n", n, u.playerCount)
+			}
 		}
 
-		//u.Players = append(u.Players, player)
 		all, err = json.Marshal(u.Players)
-		u.Printf("players as byte arr: %v\n", all)
-		u.Printf("players as slice: %s\n", string(all))
-		u.Printf("players as slice: %s\n", string(all[:]))
+		if err != nil {
+			return err
+		}
+
+		u.Printf("playerlist: %s\n", string(all[:]))
+		u.Printf("playerlist length: %d\n", n)
+
 	}
 	u.Unlock()
 
-	conn.Cmd("HSET", u.InstanceKey, "player-count", u.playerCount)
-	//	conn.Cmd("HSET", u.InstanceKey, "players", string(all[:]))
+	conn.Cmd("HSET", u.InstanceKey, kPlayerCount, u.playerCount)
+	conn.Cmd("HSET", u.InstanceKey, kPlayerList, string(all[:]))
 
 	if err := conn.Cmd("EXEC").Err; err != nil {
 		return err
@@ -132,7 +150,7 @@ func (u *Update) OnTick() {
 			u.Printf("tick: %s\n", u.Label)
 			u.SetPrefixDefault()
 
-			conn.Cmd("HINCRBY", u.InstanceKey, "frame", 1)
+			conn.Cmd("HINCRBY", u.InstanceKey, kFrame, 1)
 		case <-u.Done:
 			u.SetPrefix("[UPDATE][ON_DONE] ")
 			u.Printf("loop terminated: %s\n", u.Label)

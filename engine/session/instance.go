@@ -189,10 +189,7 @@ func (i *Instance) KeyFromInstance(e *env.Global) (*string, error) {
 
 	k := e.CreateHashKey_Session(i.SessionID)
 
-	//	if err = conn.Cmd("MULTI").Err; err  != nil { // TODO: use watch
-	//		return nil, err
-	//	}
-
+	// TODO: use WATCH
 	count, err := conn.Cmd("HGET", k, kSessionPlayerCount).Int()
 	if err != nil {
 		return nil, err
@@ -218,9 +215,4 @@ func generateSeed() int64 {
 
 func generateSeedDebug() int64 {
 	return 1482284596187742126
-}
-
-type Key struct {
-	BareFormat  string `json:"bareFormat"`
-	RedisFormat string `json:"redisFormat"`
 }
