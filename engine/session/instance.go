@@ -2,72 +2,79 @@ package session
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
-	"github.com/msawangwan/unet/env"
+	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/msawangwan/unet/debug"
 )
 
+// redis:  list of active sessions
 const (
+	// active list key
+	kSessionAllActive = "session:all:active"
+)
+
+// redis: instance
+const (
+	// entry key
+	kSession = "session:"
+	// hash keys
 	kSessionID          = "session_id"
 	kSessionSeed        = "session_seed"
 	kSessionPlayerCount = "session_player_count"
 )
 
-// Instance is an abstraction for a game session. A game session can be identified
-// by a SessionID (unique), a session Seed is used to generate the world
-// associated with the session and PlayerCount tracks the number of players
-// currently in the session.
+// type Instance is a session instances abstraction
 type Instance struct {
 	SessionID   string `json:"sessionID"`
 	Seed        int64  `json:"seed"`
 	PlayerCount int    `json:"playerCount"`
+	sync.Mutex  `json:"-"`
 }
 
-// Create takes a string and creates a key from it. The key is then cached
-// using a redis list which stores the sessionIDs of all currently active
-// sessions. It then returns a new session Instance struct.
-func Create(e *env.Global, sessionID string) (*Instance, error) {
-	k := e.FetchKey_AllActiveSessions()
+// Create adds a session to a list of active sessions
+func Create(sid string, p *pool.Pool, l *debug.Log) (*Instance, error) {
+	k := kSessionAllActive
 
-	res := e.Cmd("SADD", k, sessionID)
+	res := p.Cmd("SADD", k, sid)
 	if res.Err != nil {
 		return nil, res.Err
 	}
 
 	defer func() {
-		e.SetPrefix_Debug()
+		l.SetPrefix_Debug()
 	}()
 
-	e.SetPrefix("[SESSION][CREATE] ")
-	e.Printf("created a new session: %s\n", sessionID)
+	l.SetPrefix("[SESSION][CREATE] ")
+	l.Printf("created a new session: %s\n", sid)
 
 	return &Instance{
-			SessionID: sessionID,
-			Seed:      generateSeedDebug(),
-		},
-		nil
+		SessionID: sid,
+		Seed:      generateSeedDebug(),
+	}, nil
 }
 
 // Join takes a string, which is used to identify a session instance, and then
 // returns that session Instance, increasing the session PlayerCount. Todo:
 // handle PlayerCount.
-func Join(e *env.Global, gamename string) (*Instance, error) {
-	conn, err := e.Get()
+func Join(gamename string, p *pool.Pool, l *debug.Log) (*Instance, error) {
+	conn, err := p.Get()
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		e.Put(conn)
-		e.SetPrefix_Debug()
+		p.Put(conn)
+		l.SetPrefix_Debug()
 	}()
 
-	e.SetPrefix("[SESSION][JOIN] ")
-	e.Printf("attempting to join game: %s\n", gamename)
+	l.SetPrefix("[SESSION][JOIN] ")
+	l.Printf("attempting to join game: %s\n", gamename)
 
-	k := e.CreateHashKey_Session(gamename)
+	k := kSession + gamename
 
-	res, err := conn.Cmd("HGETALL", k).Map() // TODO: should probably use a redis WATCHER to prevent race
+	res, err := conn.Cmd("HGETALL", k).Map() // TODO: might need WATCH
 	if err != nil {
 		return nil, err
 	}
@@ -88,40 +95,40 @@ func Join(e *env.Global, gamename string) (*Instance, error) {
 		return nil, err
 	}
 
-	e.Lock()
+	instance.Lock()
 	{
 		if instance.PlayerCount >= 2 {
-			e.Printf("player count greater than 2\n") // TODO: handle this
+			l.Printf("player count greater than 2\n") // TODO: handle this
 		} else {
 			instance.PlayerCount += 1
 			conn.Cmd("HINCRBY", k, kSessionPlayerCount, 1)
 		}
 	}
-	e.Unlock()
+	instance.Unlock()
 
-	e.Printf("joined game, number of players is: %d\n", instance.PlayerCount)
+	l.Printf("joined game, number of players is: %d\n", instance.PlayerCount)
 
 	return instance, nil
 }
 
 // Connect takes an ip (string) and adds it to a list of session connections
-func (i *Instance) Connect(e *env.Global, ip string) (bool, *string, error) {
-	conn, err := e.Get()
+func (i *Instance) Connect(ip string, p *pool.Pool, l *debug.Log) (bool, *string, error) {
+	conn, err := p.Get()
 	if err != nil {
 		return false, nil, err
 	}
 
 	defer func() {
-		e.Put(conn)
-		e.SetPrefix_Debug()
+		p.Put(conn)
+		l.SetPrefixDefault()
 	}()
 
-	e.SetPrefix("[SESSION][CONNECT] ")
+	l.SetPrefix("[SESSION][CONNECT] ")
 
-	k := e.CreateListKey_SessionConn(e.CreateHashKey_Session(i.SessionID))
+	k := "session:" + i.SessionID + ":conn"
 
-	e.Printf("key for connections: %s\n", k)
-	e.Printf("%s connecting to %s\n", ip, i.SessionID)
+	l.Printf("key for connections: %s\n", k)
+	l.Printf("%s connecting to %s\n", ip, i.SessionID)
 
 	res, err := conn.Cmd("LRANGE", k, 0, -1).List()
 	if err != nil {
@@ -130,7 +137,7 @@ func (i *Instance) Connect(e *env.Global, ip string) (bool, *string, error) {
 
 	for _, v := range res {
 		if v == ip {
-			e.Printf("%s is already connected to the session\n", ip) // TODO: actually handle this, ie return instead of break
+			l.Printf("%s is already connected to the session\n", ip) // TODO: actually handle this, ie return instead of break
 			break
 		}
 	}
@@ -142,24 +149,24 @@ func (i *Instance) Connect(e *env.Global, ip string) (bool, *string, error) {
 
 // LoadSessionInstanceIntoMemory will add all the properties of a session
 // Instance struct into a redis store, which can later be accessed by
-func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) (*string, error) {
-	conn, err := e.Get()
+func (i *Instance) LoadSessionInstanceIntoMemory(p *pool.Pool, l *debug.Log) (*string, error) {
+	conn, err := p.Get()
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		e.Put(conn)
-		e.SetPrefix_Debug()
+		p.Put(conn)
+		l.SetPrefixDefault()
 	}()
 
-	e.SetPrefix("[SESSION][MAKE_ACTIVE] ")
+	l.SetPrefix("[SESSION][MAKE_ACTIVE] ")
 
 	if err = conn.Cmd("MULTI").Err; err != nil { // start transaction
 		return nil, err
 	}
 
-	k := e.CreateHashKey_Session(i.SessionID)
+	k := kSession + i.SessionID
 
 	conn.Cmd("HSET", k, kSessionID, i.SessionID)
 	conn.Cmd("HSET", k, kSessionSeed, i.Seed)
@@ -169,25 +176,25 @@ func (i *Instance) LoadSessionInstanceIntoMemory(e *env.Global) (*string, error)
 		return nil, err
 	}
 
-	e.Printf("session loaded into memory ...")
+	l.Printf("session loaded into memory ...")
 
 	return &k, nil
 }
 
-func (i *Instance) KeyFromInstance(e *env.Global) (*string, error) {
-	conn, err := e.Get()
+func (i *Instance) KeyFromInstance(p *pool.Pool, l *debug.Log) (*string, error) {
+	conn, err := p.Get()
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		e.Put(conn)
-		e.SetPrefixDefault()
+		p.Put(conn)
+		l.SetPrefixDefault()
 	}()
 
-	e.SetPrefix("[SESSION][KEY_FROM_INSTANCE] ")
+	l.SetPrefix("[SESSION][KEY_FROM_INSTANCE] ")
 
-	k := e.CreateHashKey_Session(i.SessionID)
+	k := kSession + i.SessionID
 
 	// TODO: use WATCH
 	count, err := conn.Cmd("HGET", k, kSessionPlayerCount).Int()
@@ -196,7 +203,7 @@ func (i *Instance) KeyFromInstance(e *env.Global) (*string, error) {
 	}
 
 	if count >= 2 {
-		e.Printf("session at max capacity (2): %d\n", count)
+		l.Printf("session at max capacity (2): %d\n", count)
 	}
 
 	count += 1

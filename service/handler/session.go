@@ -12,7 +12,7 @@ import (
 )
 
 // POST session/availability
-func CheckSessionNameAvailable(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func CheckSessionNameAvailable(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		la   *session.LobbyAvailability
 		skey *session.Key
@@ -24,7 +24,7 @@ func CheckSessionNameAvailable(e *env.Global, w http.ResponseWriter, r *http.Req
 	}
 
 	la = &session.LobbyAvailability{}
-	err = la.CheckAvailability(e, skey.BareFormat)
+	err = la.CheckAvailability(skey.BareFormat, g.Pool, g.Log)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -35,7 +35,7 @@ func CheckSessionNameAvailable(e *env.Global, w http.ResponseWriter, r *http.Req
 }
 
 // POST session/new
-func CreateNewSession(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func CreateNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
 		skey     *session.Key
@@ -43,7 +43,7 @@ func CreateNewSession(e *env.Global, w http.ResponseWriter, r *http.Request) *ex
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
 
-	instance, err = session.Create(e, skey.BareFormat)
+	instance, err = session.Create(skey.BareFormat, g.Pool, g.Log)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -54,7 +54,7 @@ func CreateNewSession(e *env.Global, w http.ResponseWriter, r *http.Request) *ex
 }
 
 // POST session/new/open
-func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func MakeSessionActive(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
 		skey     *session.Key
@@ -65,7 +65,7 @@ func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	key, err := instance.LoadSessionInstanceIntoMemory(e)
+	key, err := instance.LoadSessionInstanceIntoMemory(g.Pool, g.Log)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	} else {
@@ -83,7 +83,7 @@ func MakeSessionActive(e *env.Global, w http.ResponseWriter, r *http.Request) *e
 }
 
 // POST session/new/join
-func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func JoinExistingSession(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
 		skey     *session.Key
@@ -94,7 +94,7 @@ func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) 
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	instance, err = session.Join(e, skey.BareFormat)
+	instance, err = session.Join(skey.BareFormat, g.Pool, g.Log)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -105,7 +105,7 @@ func JoinExistingSession(e *env.Global, w http.ResponseWriter, r *http.Request) 
 }
 
 // POST session/new/instance/key
-func KeyFromInstance(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func KeyFromInstance(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		instance *session.Instance
 		skey     *session.Key
@@ -116,7 +116,7 @@ func KeyFromInstance(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 		return throw(err, err.Error(), 500)
 	}
 
-	key, err := instance.KeyFromInstance(e)
+	key, err := instance.KeyFromInstance(g.Pool, g.Log)
 	if err != nil {
 		return throw(err, err.Error(), 500)
 	} else {
@@ -134,14 +134,12 @@ func KeyFromInstance(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 }
 
 // POST session/new/connect
-func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func EstablishSessionConnection(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		owner *session.Owner
-		//	instance *session.Instance
-		conn *session.Connection
+		conn  *session.Connection
 	)
 
-	//	err := json.NewDecoder(r.Body).Decode(&instance)
 	err := json.NewDecoder(r.Body).Decode(&owner)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
@@ -152,15 +150,14 @@ func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Re
 	)
 
 	ip = r.Header.Get("x-forwarded-for")
-	if len(ip) == 0 { // we're proxying through nginx so this should never hit, but just as a backup
+	if len(ip) == 0 { // we're proxying through nginx so we can prevent this
 		ip, _, err = net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
 			return &exception.Handler{err, err.Error(), 500}
 		}
 	}
 
-	//	result, key, err := instance.Connect(e, ip)
-	result, key, err := session.EstablishConnection(e, owner.PlayerName, ip)
+	result, key, err := session.EstablishConnection(owner.PlayerName, ip, g.Pool, g.Log)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}
@@ -176,13 +173,46 @@ func EstablishSessionConnection(e *env.Global, w http.ResponseWriter, r *http.Re
 	return nil
 }
 
+// GET session/new/key
+func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+	var (
+		skey *int
+		k    int
+	)
+
+	skey, err := g.KeyGen.RegisterNewSession(g.Pool)
+	if err != nil {
+		return throw(err, err.Error(), 500)
+	} else if skey == nil {
+		return throw(nil, "nil key error", 500)
+	} else {
+		k = *skey
+		//jsonInt := struct {
+		//	Value int `json:"value"`
+		//}{
+		//	Value: k,
+		//}
+		//g.Printf("sending json: %v\n", jsonint)
+		//json.NewEncoder(w).Encode(jsonInt)
+		json.NewEncoder(w).Encode(
+			struct {
+				Value int `json:"value"`
+			}{
+				Value: k,
+			},
+		)
+	}
+
+	return nil
+}
+
 // GET session/active
-func FetchAllActiveSessions(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func FetchAllActiveSessions(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		l *session.Lobby = &session.Lobby{}
 	)
 
-	err := l.PopulateLobbyList(e)
+	err := l.PopulateLobbyList(g.Pool, g.Log)
 	if err != nil {
 		return &exception.Handler{err, err.Error(), 500}
 	}

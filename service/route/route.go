@@ -57,6 +57,11 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("api/session/availability"),
 				Handler: resource.Context{environment, handler.CheckSessionNameAvailable},
 			},
+			"session/new/key": &route{
+				Method:  "GET",
+				Pattern: cache("api/session/new/key"),
+				Handler: resource.Context{environment, handler.RegisterNewSession},
+			},
 			"session/new": &route{
 				Method:  "POST",
 				Pattern: cache("api/session/new"),

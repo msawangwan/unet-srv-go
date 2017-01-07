@@ -1,33 +1,33 @@
 package session
 
 import (
-	"github.com/msawangwan/unet/db"
-	"github.com/msawangwan/unet/env"
+	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/msawangwan/unet/debug"
 )
 
 type Lobby struct {
 	Listing []string `json:"listing"`
 }
 
-func (l *Lobby) PopulateLobbyList(e *env.Global) error {
+func (lobby *Lobby) PopulateLobbyList(p *pool.Pool, l *debug.Log) error {
 	defer func() {
-		e.SetPrefix_Debug()
+		l.SetPrefixDefault()
 	}()
 
-	e.SetPrefix("[LOBBY][INFO] ")
-	e.Printf("fetching lobby list ...\n")
+	l.SetPrefix("[LOBBY][INFO] ")
+	l.Printf("fetching lobby list ...\n")
 
-	k1 := e.FetchKey_AllActiveSessions()
+	k := kSessionAllActive
 
-	r := e.Cmd(db.CMD_SMEMBERS, k1)
+	r := p.Cmd("SMEMBERS", k)
 	if r.Err != nil {
 		return r.Err
 	} else {
 		sessions, _ := r.List()
-		l.Listing = make([]string, len(sessions))
+		lobby.Listing = make([]string, len(sessions))
 		for i, session := range sessions {
-			e.Printf("active session: %s\n", session)
-			l.Listing[i] = session
+			l.Printf("active session: %s\n", session)
+			lobby.Listing[i] = session
 		}
 
 		return nil
@@ -38,10 +38,10 @@ type LobbyAvailability struct {
 	IsAvailable bool `json:"isAvailable"`
 }
 
-func (la *LobbyAvailability) CheckAvailability(e *env.Global, name string) error {
-	k1 := e.FetchKey_AllActiveSessions()
+func (la *LobbyAvailability) CheckAvailability(name string, p *pool.Pool, l *debug.Log) error {
+	k := kSessionAllActive
 
-	res, err := e.Cmd(db.CMD_SISMEMBER, k1, name).Int()
+	res, err := p.Cmd("SISMEMBER", k, name).Int()
 	if err != nil {
 		return err
 	} else {

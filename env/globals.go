@@ -8,6 +8,7 @@ import (
 	"github.com/msawangwan/unet/db"
 	"github.com/msawangwan/unet/debug"
 	"github.com/msawangwan/unet/engine/game"
+	"github.com/msawangwan/unet/engine/session"
 )
 
 // type Global encapsulates global handlers
@@ -17,8 +18,8 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	//Sessions *SessionTable
 	GameManager *game.Manager
+	KeyGen      *session.KeyGenerator
 
 	sync.Mutex
 	sync.WaitGroup
@@ -26,6 +27,11 @@ type Global struct {
 
 // NewGlobalHandle returns a new instance of a global context object
 func New(maxSessionsPerHost int, param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
+	kgen, err := session.NewKeyGenerator(redis.Pool, log)
+	if err != nil {
+		log.Printf("env setup error with keygen: %s\n", err.Error()) // TODO: handle for reals
+	}
+
 	return &Global{
 		GameParameters: param,
 		RedisHandle:    redis,
@@ -33,7 +39,7 @@ func New(maxSessionsPerHost int, param *config.GameParameters, redis *db.RedisHa
 		Log:            log,
 
 		GameManager: game.NewGameManager(maxSessionsPerHost),
-		//	Sessions: NewSessionTable(maxSessionsPerHost),
+		KeyGen:      kgen,
 	}
 }
 
