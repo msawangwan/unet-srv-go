@@ -177,7 +177,6 @@ func EstablishSessionConnection(g *env.Global, w http.ResponseWriter, r *http.Re
 func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		skey *int
-		k    int
 	)
 
 	skey, err := g.KeyGen.RegisterNewSession(g.Pool)
@@ -186,19 +185,11 @@ func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) *
 	} else if skey == nil {
 		return throw(nil, "nil key error", 500)
 	} else {
-		k = *skey
-		//jsonInt := struct {
-		//	Value int `json:"value"`
-		//}{
-		//	Value: k,
-		//}
-		//g.Printf("sending json: %v\n", jsonint)
-		//json.NewEncoder(w).Encode(jsonInt)
 		json.NewEncoder(w).Encode(
 			struct {
 				Value int `json:"value"`
 			}{
-				Value: k,
+				Value: *skey,
 			},
 		)
 	}
