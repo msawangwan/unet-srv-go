@@ -66,7 +66,7 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("session/new/key"),
 				Handler: resource.Context{environment, handler.RegisterNewSession},
 			},
-			"session/game/host": &route{
+			"session/host/instance": &route{
 				Method:  "POST",
 				Pattern: cache("session/host/instance"),
 				Handler: resource.Context{environment, handler.HostNewGame},

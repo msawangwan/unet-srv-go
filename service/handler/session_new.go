@@ -13,6 +13,10 @@ import (
 	"github.com/msawangwan/unet/service/exception"
 )
 
+const (
+	kLogPrefix_Session = "SESSION"
+)
+
 // RegisterNewSession creates a client session key, it is sent back as  json to
 // the client and stored on the server in redis and in memory
 //
@@ -59,16 +63,33 @@ func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) *
 //
 // POST session/host/instance
 func HostNewGame(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+	cleanup := setPrefix(kLogPrefix_Session, "HOST_NEW", g.Log)
+	defer cleanup()
+
+	j, err := parseJSONInt(r.Body)
+	if err != nil {
+		return throw(err, err.Error(), 500)
+	} else if j == nil {
+		g.Printf("nil key...") // TODO: handle
+	}
+
 	var (
-		skey int
+		skey int    = *j
+		ip   string = r.Header.Get("x-forwarded-for")
+
+		shandle *session.Handle
 	)
 
-	err := json.NewDecoder(r.Body).Decode(skey)
+	shandle, err = g.SessionHandleManager.Get(skey)
 	if err != nil {
 		return throw(err, err.Error(), 500)
 	}
 
-	g.Printf("DECODED JSON INTO INT: %d", skey)
+	if ip == shandle.Owner {
+		g.Printf("ip check ok") // TODO: do this sooner?
+	}
+
+	// NEED TO GET A GAME INSTANCE IN A SEPERATE ROUTE
 
 	return nil
 }

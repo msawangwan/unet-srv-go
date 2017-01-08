@@ -10,6 +10,7 @@ import (
 
 type Handle struct {
 	Owner string `json:"player"`
+	//GameInstance *game.Instance `json:"gameInstance"`
 }
 
 func NewHandle(owner string) (*Handle, error) {
@@ -42,6 +43,7 @@ func NewHandleManager(capacity int, conns *pool.Pool, log *debug.Log) (*HandleMa
 
 var (
 	ErrHandleAlreadyRegistered = errors.New("failed to add session instance")
+	ErrTableLookupFailed       = errors.New("failed lookup")
 )
 
 func (hm *HandleManager) Add(id int, handle *Handle) error {
@@ -61,6 +63,25 @@ func (hm *HandleManager) Add(id int, handle *Handle) error {
 		hm.Table[id] = handle
 		hm.Printf("succeeded in adding session [id: %d] ...\n", id)
 		return nil
+	}
+}
+
+func (hm *HandleManager) Get(id int) (*Handle, error) {
+	hm.Lock()
+
+	defer func() {
+		hm.Unlock()
+		hm.SetPrefixDefault()
+	}()
+
+	hm.setPrefix()
+
+	if hm.Table[id] == nil {
+		hm.Printf("session handle does not exists, lookup failed [id: %d] ...\n", id)
+		return nil, ErrTableLookupFailed
+	} else {
+		hm.Printf("accessing session handle [id: %d] ...", id)
+		return hm.Table[id], nil
 	}
 }
 
