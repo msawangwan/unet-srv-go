@@ -11,6 +11,10 @@ import (
 	"github.com/msawangwan/unet/service/resource"
 )
 
+const (
+	kPrefixFallback = "api" // TODO: get from config
+)
+
 // type route consists of:
 // a method
 // a regex pattern (path)
@@ -34,72 +38,77 @@ func NewRouteTable(environment *env.Global) *Table {
 		Endpoints: map[string]*route{
 			"profile/availability": &route{
 				Method:  "POST",
-				Pattern: cache("api/profile/availability"),
+				Pattern: cache("profile/availability"),
 				Handler: resource.Context{environment, handler.CheckProfileAvailability},
 			},
 			"profile/new": &route{
 				Method:  "POST",
-				Pattern: cache("api/profile/new"),
+				Pattern: cache("profile/new"),
 				Handler: resource.Context{environment, handler.CreateNewProfile},
 			},
 			"profile/world/load": &route{
 				Method:  "POST",
-				Pattern: cache("api/profile/world/load"),
+				Pattern: cache("profile/world/load"),
 				Handler: resource.Context{environment, handler.GenerateWorldData},
 			},
 			"session/active": &route{
 				Method:  "GET",
-				Pattern: cache("api/session/active"),
+				Pattern: cache("session/active"),
 				Handler: resource.Context{environment, handler.FetchAllActiveSessions},
 			},
 			"session/availability": &route{
 				Method:  "POST",
-				Pattern: cache("api/session/availability"),
+				Pattern: cache("session/availability"),
 				Handler: resource.Context{environment, handler.CheckSessionNameAvailable},
 			},
 			"session/new/key": &route{
 				Method:  "GET",
-				Pattern: cache("api/session/new/key"),
+				Pattern: cache("session/new/key"),
 				Handler: resource.Context{environment, handler.RegisterNewSession},
+			},
+			"session/game/host": &route{
+				Method:  "POST",
+				Pattern: cache("session/host/instance"),
+				Handler: resource.Context{environment, handler.HostNewGame},
 			},
 			"session/new": &route{
 				Method:  "POST",
-				Pattern: cache("api/session/new"),
+				Pattern: cache("session/new"),
 				Handler: resource.Context{environment, handler.CreateNewSession},
 			},
 			"session/new/open": &route{
 				Method:  "POST",
-				Pattern: cache("api/session/new/open"),
+				Pattern: cache("session/new/open"),
 				Handler: resource.Context{environment, handler.MakeSessionActive},
 			},
 			"session/new/join": &route{
 				Method:  "POST",
-				Pattern: cache("api/session/new/join"),
+				Pattern: cache("session/new/join"),
 				Handler: resource.Context{environment, handler.JoinExistingSession},
 			},
 			"session/new/connect": &route{
 				Method:  "POST",
-				Pattern: cache("api/session/new/connect"),
+				Pattern: cache("session/new/connect"),
 				Handler: resource.Context{environment, handler.EstablishSessionConnection},
 			},
 			"session/new/instance/key": &route{
 				Method:  "POST",
-				Pattern: cache("api/session/new/instance/key"),
+				Pattern: cache("session/new/instance/key"),
 				Handler: resource.Context{environment, handler.KeyFromInstance},
 			},
 			"game/update/start": &route{
 				Method:  "POST",
-				Pattern: cache("api/game/update/start"),
+				Pattern: cache("game/update/start"),
 				Handler: resource.Context{environment, handler.StartGameUpdate},
 			},
 			"game/update/enter": &route{
 				Method:  "POST",
-				Pattern: cache("api/game/update/enter"),
+				Pattern: cache("game/update/enter"),
 				Handler: resource.Context{environment, handler.EnterGameUpdate},
 			},
 			"game/update/frame": &route{
 				Method:  "POST",
-				Pattern: cache("api/game/update/frame"),
+				Pattern: cache("game/update/frame"),
 				Handler: resource.Context{environment, handler.GameFrameUpdate},
 			},
 		},
@@ -109,6 +118,6 @@ func NewRouteTable(environment *env.Global) *Table {
 }
 
 func cache(regex string) *regexp.Regexp {
-	c, _ := regexp.Compile(regex)
+	c, _ := regexp.Compile(kPrefixFallback + "/" + regex)
 	return c
 }

@@ -24,7 +24,6 @@ func EstablishConnection(sid string, ip string, p *pool.Pool, l *debug.Log) (boo
 
 	l.SetPrefix("[SESSION][CONNECT] ")
 
-	//	k := e.CreateListKey_SessionConn(e.CreateHashKey_Session(sid))
 	k := "session:" + sid + ":conn"
 
 	connected, err := conn.Cmd("LRANGE", k, 0, -1).List()

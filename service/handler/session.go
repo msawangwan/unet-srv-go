@@ -137,7 +137,7 @@ func KeyFromInstance(g *env.Global, w http.ResponseWriter, r *http.Request) *exc
 func EstablishSessionConnection(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
 	var (
 		owner *session.Owner
-		conn  *session.Connection
+	//	conn  *session.Connection
 	)
 
 	err := json.NewDecoder(r.Body).Decode(&owner)
@@ -162,37 +162,25 @@ func EstablishSessionConnection(g *env.Global, w http.ResponseWriter, r *http.Re
 		return &exception.Handler{err, err.Error(), 500}
 	}
 
-	conn = &session.Connection{
-		IsConnected: result,
-		Address:     ip,
-		Message:     *key,
-	}
+	//conn = &session.Connection{
+	//	IsConnected: result,
+	//	Address:     ip,
+	//	Message:     *key,
+	//}
 
-	json.NewEncoder(w).Encode(conn)
+	//json.NewEncoder(w).Encode(conn)
 
-	return nil
-}
-
-// GET session/new/key
-func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-	var (
-		skey *int
+	json.NewEncoder(w).Encode(
+		struct {
+			IsConnected bool   `json:"isConnected"`
+			Address     string `json:"address"`
+			Message     string `json:"message"`
+		}{
+			IsConnected: result,
+			Address:     ip,
+			Message:     *key,
+		},
 	)
-
-	skey, err := g.KeyGen.RegisterNewSession(g.Pool)
-	if err != nil {
-		return throw(err, err.Error(), 500)
-	} else if skey == nil {
-		return throw(nil, "nil key error", 500)
-	} else {
-		json.NewEncoder(w).Encode(
-			struct {
-				Value int `json:"value"`
-			}{
-				Value: *skey,
-			},
-		)
-	}
 
 	return nil
 }

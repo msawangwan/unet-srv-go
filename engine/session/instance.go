@@ -30,7 +30,8 @@ type Instance struct {
 	SessionID   string `json:"sessionID"`
 	Seed        int64  `json:"seed"`
 	PlayerCount int    `json:"playerCount"`
-	sync.Mutex  `json:"-"`
+
+	sync.Mutex `json:"-"`
 }
 
 // Create adds a session to a list of active sessions

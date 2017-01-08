@@ -7,6 +7,7 @@ import (
 	"github.com/msawangwan/unet/config"
 	"github.com/msawangwan/unet/db"
 	"github.com/msawangwan/unet/debug"
+
 	"github.com/msawangwan/unet/engine/game"
 	"github.com/msawangwan/unet/engine/session"
 )
@@ -18,8 +19,9 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	GameManager *game.Manager
-	KeyGen      *session.KeyGenerator
+	GameManager          *game.Manager
+	SessionHandleManager *session.HandleManager
+	KeyGen               *session.KeyGenerator
 
 	sync.Mutex
 	sync.WaitGroup
@@ -27,20 +29,24 @@ type Global struct {
 
 // NewGlobalHandle returns a new instance of a global context object
 func New(maxSessionsPerHost int, param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
-	kgen, err := session.NewKeyGenerator(redis.Pool, log)
-	if err != nil {
-		log.Printf("env setup error with keygen: %s\n", err.Error()) // TODO: handle for reals
-	}
+	hmanager, err := session.NewHandleManager(100, redis.Pool, log) // TODO: get max capactiy from conf
+	checkErr(err, log)
 
-	return &Global{
+	kgen, err := session.NewKeyGenerator(redis.Pool, log)
+	checkErr(err, log)
+
+	g := &Global{
 		GameParameters: param,
 		RedisHandle:    redis,
 		PostgreHandle:  pg,
 		Log:            log,
 
-		GameManager: game.NewGameManager(maxSessionsPerHost),
-		KeyGen:      kgen,
+		GameManager:          game.NewGameManager(maxSessionsPerHost),
+		SessionHandleManager: hmanager,
+		KeyGen:               kgen,
 	}
+
+	return g
 }
 
 // NullGlobalHanldle  returns an empty global context
@@ -50,5 +56,14 @@ func Null() *Global {
 		RedisHandle:    nil,
 		PostgreHandle:  nil,
 		Log:            nil,
+	}
+}
+
+// checkErr is an un-exported helper function for error checking
+func checkErr(err error, log *debug.Log) {
+	if err != nil {
+		defer log.SetPrefixDefault()
+		log.SetPrefix("[INIT][ERROR] ")
+		log.Fatalf("%s\n", err)
 	}
 }

@@ -1,0 +1,16 @@
+package handler
+
+import (
+	"encoding/json"
+)
+
+func parseJSON(r io.Reader) (interface{}, error) {
+	payload := make(map[string]interface{})
+
+	err := json.NewDecoder(r).Decode(&payload)
+	if err != nil {
+		return nil, err
+	} else {
+		return payload, nil
+	}
+}
