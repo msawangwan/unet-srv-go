@@ -7,8 +7,13 @@ import (
 
 	"encoding/json"
 
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
+	"github.com/msawangwan/unet-srv-go/service/exception"
 )
+
+func raiseServerError(err error) exception.Handler {
+	return raise(err, err.Error(), 500)
+}
 
 func setPrefix(prefix string, specific string, l *debug.Log) func() {
 	l.SetPrefix(fmt.Sprintf("[HTTP][HANDLER][%s][%s] ", prefix, specific))
@@ -18,6 +23,7 @@ func setPrefix(prefix string, specific string, l *debug.Log) func() {
 }
 
 func parseJSON(r io.Reader) (interface{}, error) {
+	// setPrefix("JSON", "PARSE", )
 	var (
 		j interface{}
 	)
@@ -26,9 +32,9 @@ func parseJSON(r io.Reader) (interface{}, error) {
 
 	if err != nil {
 		return nil, err
-	} else {
-		return j.(map[string]interface{}), nil
 	}
+
+	return j.(map[string]interface{}), nil
 }
 
 func parseJSONInt(r io.Reader) (*int, error) {
@@ -40,9 +46,9 @@ func parseJSONInt(r io.Reader) (*int, error) {
 	d.UseNumber()
 	if err := d.Decode(&j); err != nil {
 		return nil, err
-	} else {
-		n := j.(map[string]interface{})["value"].(json.Number)
-		val, _ := strconv.Atoi(string(n))
-		return &val, nil
 	}
+
+	n := j.(map[string]interface{})["value"].(json.Number)
+	val, _ := strconv.Atoi(string(n))
+	return &val, nil
 }

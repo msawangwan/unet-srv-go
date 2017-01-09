@@ -2,7 +2,7 @@ package session
 
 import (
 	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
 )
 
 // key
@@ -10,16 +10,19 @@ const (
 	kSessionKey = "session:key"
 )
 
+// KeyGenerator generates the next available int key to be used as a session id
 type KeyGenerator struct {
 	Next int
 	*debug.Log
 }
 
+// Key is probably deprecated on the server side
 type Key struct {
 	BareFormat  string `json:"bareFormat"`
 	RedisFormat string `json:"redisFormat"`
 }
 
+// NewKeyGenerator is a factory function, reurns an instance of KeyGenerator
 func NewKeyGenerator(p *pool.Pool, l *debug.Log) (*KeyGenerator, error) {
 	kgen := &KeyGenerator{
 		Next: -1,

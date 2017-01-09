@@ -2,15 +2,22 @@ package session
 
 import (
 	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
 )
 
+/*
+*   this class may become useful later
+*
+**/
+
+// Owner may not need this type or function as it was implemented as a hack workaround
 type Owner struct {
 	AttachedSession string `json:"attachedSession"`
 	PlayerName      string `json:"playerName"`
 	PlayerIndex     int    `json:"playerIndex"`
 }
 
+// EstablishConnection was created as a result of a need for a workaround
 func EstablishConnection(sid string, ip string, p *pool.Pool, l *debug.Log) (bool, *string, error) {
 	conn, err := p.Get()
 	if err != nil {

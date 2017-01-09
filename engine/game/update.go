@@ -1,6 +1,7 @@
 package game
 
 import (
+	"errors"
 	"os"
 	"runtime"
 	"syscall"
@@ -9,14 +10,18 @@ import (
 	"os/signal"
 
 	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
 )
 
 const (
-	kReportInterval = 5000 * time.Millisecond
+	statusUpdateInterval = 5000 * time.Millisecond
 )
 
-// type UpdateHandler is the central game loop
+var (
+	errTerminatedByAdmin = errors.New("update was terminated by admin")
+)
+
+// UpdateHandler is the central game loop
 type UpdateHandler struct {
 	*pool.Pool
 	*debug.Log
@@ -26,11 +31,12 @@ type UpdateHandler struct {
 }
 
 // NewUpdateHandle returns a new instance of an update handler
-func NewUpdateHandle(conns *pool.Pool, log *debug.Log) *UpdateHandler {
+func NewUpdateHandle(errc chan error, conns *pool.Pool, log *debug.Log) *UpdateHandler {
 	return &UpdateHandler{
-		Pool: conns,
-		Log:  log,
-		kill: make(chan os.Signal, 2),
+		Pool:  conns,
+		Log:   log,
+		Error: errc,
+		kill:  make(chan os.Signal, 2),
 	}
 }
 
@@ -63,10 +69,12 @@ func (uh *UpdateHandler) Monitor() {
 			uh.SetPrefixDefault()
 
 			signal.Stop(uh.kill)
+			uh.Error <- errTerminatedByAdmin
+			// close(uh.Error) // TODO: this is not a good idea, as others may try to write to this chan
 
 			return
 		default:
-			time.Sleep(kReportInterval)
+			time.Sleep(statusUpdateInterval)
 
 			active = runtime.NumGoroutine()
 			avail = uh.Avail()

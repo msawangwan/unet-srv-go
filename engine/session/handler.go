@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
 
-	"github.com/msawangwan/unet/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/game"
 )
 
 // key format;

@@ -1,177 +1,186 @@
 package handler
 
-import (
-	"net"
+// service/handler/new_session.go handles session routes
 
+import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/msawangwan/unet/engine/session"
-	"github.com/msawangwan/unet/env"
-	"github.com/msawangwan/unet/service/exception"
+	"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/session"
+
+	"github.com/msawangwan/unet-srv-go/env"
+	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
-// POST session/availability
-func CheckSessionNameAvailable(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-	//	var (
-	//		la   *session.LobbyAvailability
-	//		skey *session.Key
-	//	)
-	//
-	//	err := json.NewDecoder(r.Body).Decode(&skey)
-	//	if err != nil {
-	//		return &exception.Handler{err, err.Error(), 500}
-	//	}
-	//
-	//	la = &session.LobbyAvailability{}
-	//	err = la.CheckAvailability(skey.BareFormat, g.Pool, g.Log)
-	//	if err != nil {
-	//		return &exception.Handler{err, err.Error(), 500}
-	//	}
-	//
-	//	json.NewEncoder(w).Encode(la)
-	//
-	return nil
-}
+/*
+ * - RegisterNewSession creates a client session key, it is sent back as json to
+ *     the client and stored on the server in redis and in memory
+ * - SetPlayerOwnerName assigns the players name to its associated session handle
+ *  - CheckGameNameAvailable checks if the game name is valid (for host)
+ * - HostNewGame starts a new game, given a request to host by a client
+ * - FetchAllActive gets the lobby list
+ */
 
-// POST session/new
-func CreateNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-	//	var (
-	//		instance *session.Instance
-	//		skey     *session.Key
-	//	)
+const (
+	logPrefixSession = "SESSION"
+)
 
-	//	err := json.NewDecoder(r.Body).Decode(&skey)
-
-	//	instance, err = session.Create(skey.BareFormat, g.Pool, g.Log)
-	//	if err != nil {
-	//		return &exception.Handler{err, err.Error(), 500}
-	//	}
-
-	//	json.NewEncoder(w).Encode(instance)
-
-	return nil
-}
-
-// POST session/new/open
-func MakeSessionActive(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-	//	var (
-	//		instance *session.Instance
-	//		skey     *session.Key
-	//	)
-	//
-	//	err := json.NewDecoder(r.Body).Decode(&instance)
-	//	if err != nil {
-	//		return &exception.Handler{err, err.Error(), 500}
-	//	}
-	//
-	//	key, err := instance.LoadSessionInstanceIntoMemory(g.Pool, g.Log)
-	//	if err != nil {
-	//		return &exception.Handler{err, err.Error(), 500}
-	//	} else {
-	//		if key != nil {
-	//			skey = &session.Key{
-	//				BareFormat:  instance.SessionID,
-	//				RedisFormat: *key,
-	//			}
-	//		}
-	//	}
-	//
-	//	json.NewEncoder(w).Encode(skey)
-
-	return nil
-}
-
-// POST session/new/join
-func JoinExistingSession(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+// RegisterNewSession :  GET session/register/key
+func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
-		instance *session.Instance
-		skey     *session.Key
+		skey *int
+		k    int
+		ip   string
 	)
 
-	err := json.NewDecoder(r.Body).Decode(&skey)
+	skey, err := g.SessionKeyGenerator.GenerateNext(g.Pool)
 	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
-	}
-
-	instance, err = session.Join(skey.BareFormat, g.Pool, g.Log)
-	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
-	}
-
-	json.NewEncoder(w).Encode(instance)
-
-	return nil
-}
-
-// POST session/new/instance/key
-func KeyFromInstance(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-	var (
-		instance *session.Instance
-		skey     *session.Key
-	)
-
-	err := json.NewDecoder(r.Body).Decode(&instance)
-	if err != nil {
-		return throw(err, err.Error(), 500)
-	}
-
-	key, err := instance.KeyFromInstance(g.Pool, g.Log)
-	if err != nil {
-		return throw(err, err.Error(), 500)
+		return raise(err, err.Error(), 500)
+	} else if skey == nil {
+		return raise(nil, "nil key error", 500)
 	} else {
-		if key != nil {
-			skey = &session.Key{
-				BareFormat:  instance.SessionID,
-				RedisFormat: *key,
-			}
-		}
-	}
+		k = *skey
+		ip = r.Header.Get("x-forwarded-for")
 
-	json.NewEncoder(w).Encode(skey)
+		if len(ip) == 0 {
+			ip = "invalid.client.add." + string(k) // TODO: handle for real
+		}
+
+		sh, _ := session.NewHandle(ip)
+		if err != nil {
+			g.Printf("tried to create a new handle but got an err: %s\n", err.Error())
+		}
+		g.SessionHandleManager.Add(k, sh)
+
+		json.NewEncoder(w).Encode(
+			struct {
+				Value int `json:"value"`
+			}{
+				Value: k,
+			},
+		)
+	}
 
 	return nil
 }
 
-// POST session/new/connect
-func EstablishSessionConnection(g *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
-	var (
-		owner *session.Owner
-	)
+// SetPlayerOwnerName : POST session/register/name
+func SetPlayerOwnerName(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	cleanup := setPrefix(logPrefixSession, "SET_NAME", g.Log)
+	defer cleanup()
 
-	err := json.NewDecoder(r.Body).Decode(&owner)
+	j, err := parseJSON(r.Body)
 	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
+		return raise(err, err.Error(), 500)
 	}
 
 	var (
-		ip string
+		k       int
+		name    string
+		shandle *session.Handle
 	)
 
-	ip = r.Header.Get("x-forwarded-for")
-	if len(ip) == 0 { // we're proxying through nginx so we can prevent this
-		ip, _, err = net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			return &exception.Handler{err, err.Error(), 500}
-		}
-	}
+	k = int(j.(map[string]interface{})["key"].(float64)) // TODO: this will cause bugs, i just know it
+	name = j.(map[string]interface{})["value"].(string)
 
-	result, key, err := session.EstablishConnection(owner.PlayerName, ip, g.Pool, g.Log)
+	g.Printf("register sessionHandle [sessionID: %d] to owner: %s ...", k, name)
+	g.Printf("success ...")
+
+	shandle, err = g.SessionHandleManager.Get(k)
 	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
+		return raise(err, err.Error(), 500)
 	}
 
-	json.NewEncoder(w).Encode(
-		struct {
-			IsConnected bool   `json:"isConnected"`
-			Address     string `json:"address"`
-			Message     string `json:"message"`
-		}{
-			IsConnected: result,
-			Address:     ip,
-			Message:     *key,
-		},
+	shandle.SetOwner(name, r.Header.Get("x-forwarded-for"))
+
+	return nil
+}
+
+// CheckGameNameAvailable : POST session/host/name/availability
+func CheckGameNameAvailable(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	cleanup := setPrefix(logPrefixSession, "CHECK_HOST_NAME", g.Log)
+	defer cleanup()
+
+	var (
+		la = &session.LobbyAvailability{}
 	)
+
+	j, err := parseJSON(r.Body)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	k := j.(map[string]interface{})["value"].(string)
+
+	if err = la.CheckAvailability(k, g.Pool, g.Log); err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	json.NewEncoder(w).Encode(la)
+
+	return nil
+}
+
+// HostNewGame : POST session/host/instance
+func HostNewGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	cleanup := setPrefix(logPrefixSession, "HOST_NEW", g.Log)
+	defer cleanup()
+
+	j, err := parseJSON(r.Body)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	k := int(j.(map[string]interface{})["key"].(float64))
+	label := j.(map[string]interface{})["value"].(string)
+
+	var (
+		shandle *session.Handle
+	)
+
+	shandle, err = g.SessionHandleManager.Get(k)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	if r.Header.Get("x-forwarded-for") == shandle.OwnerIP {
+		g.Printf("ip check ok") // TODO: do this sooner?
+	}
+
+	var (
+		sim *game.Simulation
+	)
+
+	sim, err = game.NewSimulation(label, game.GenerateSeedDebug(), g.GlobalError, g.Pool, g.Log)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	err = shandle.AttachSimulation(sim)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	json.NewEncoder(w).Encode(sim)
+
+	return nil
+}
+
+// FetchAllActiveSessions : GET session/lobby/list
+func FetchAllActiveSessions(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	var (
+		l = &session.Lobby{}
+	)
+
+	err := l.PopulateLobbyList(g.Pool, g.Log)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	g.Printf("lobby listing: %v", l)
+
+	json.NewEncoder(w).Encode(l)
 
 	return nil
 }

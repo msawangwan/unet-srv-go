@@ -4,11 +4,11 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
 )
 
 const (
-	kMaxPlayersAllowed = 10 // should be 2 but 10 for debug purposes
+	maxPlayersPerSimulation = 10 // should be 2 but 10 for debug purposes
 )
 
 type Manager struct {
@@ -44,12 +44,12 @@ func (m *Manager) Add(key string, instance *Instance) (int, error) {
 			m.Printf("success adding session: %s\n")
 			m.Instances[key] = &Active{
 				Instance: instance,
-				Players:  make([]string, 0, kMaxPlayersAllowed),
+				Players:  make([]string, 0, maxPlayersPerSimulation),
 			}
-		} else {
-			m.Printf("failed to add session: %s\n")
-			return len(m.Instances), errors.New("instance already in table!")
 		}
+
+		m.Printf("failed to add session: %s\n", instance.SessionID)
+		return len(m.Instances), errors.New("instance already in table")
 	}
 	m.Unlock()
 

@@ -4,15 +4,15 @@ package env
 import (
 	"sync"
 
-	"github.com/msawangwan/unet/config"
-	"github.com/msawangwan/unet/db"
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/config"
+	"github.com/msawangwan/unet-srv-go/db"
+	"github.com/msawangwan/unet-srv-go/debug"
 
-	"github.com/msawangwan/unet/engine/game"
-	"github.com/msawangwan/unet/engine/session"
+	"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/session"
 )
 
-// type Global encapsulates global handlers
+// Global encapsulates global handlers
 type Global struct {
 	*config.GameParameters
 	*db.RedisHandle
@@ -21,14 +21,24 @@ type Global struct {
 
 	GameManager          *game.Manager
 	SessionHandleManager *session.HandleManager
-	KeyGen               *session.KeyGenerator
+	SessionKeyGenerator  *session.SessionKeyGeneratorerator
+
+	GlobalError chan error
 
 	sync.Mutex
 	sync.WaitGroup
 }
 
-// NewGlobalHandle returns a new instance of a global context object
-func New(maxSessionsPerHost int, param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
+// New returns a new instance of a global context object
+func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
+	checkErr := func(log *debug.Log) {
+		if err != nil {
+			defer log.SetPrefixDefault()
+			log.SetPrefix("[INIT][ERROR] ")
+			log.Fatalf("%s\n", err)
+		}
+	}(log)
+
 	hmanager, err := session.NewHandleManager(100, redis.Pool, log) // TODO: get max capactiy from conf
 	checkErr(err, log)
 
@@ -43,13 +53,15 @@ func New(maxSessionsPerHost int, param *config.GameParameters, redis *db.RedisHa
 
 		GameManager:          game.NewGameManager(maxSessionsPerHost),
 		SessionHandleManager: hmanager,
-		KeyGen:               kgen,
+		SessionKeyGenerator:  kgen,
+
+		GlobalError: errc,
 	}
 
 	return g
 }
 
-// NullGlobalHanldle  returns an empty global context
+// Null  returns an empty global context for testing and debug
 func Null() *Global {
 	return &Global{
 		GameParameters: nil,
@@ -60,10 +72,10 @@ func Null() *Global {
 }
 
 // checkErr is an un-exported helper function for error checking
-func checkErr(err error, log *debug.Log) {
-	if err != nil {
-		defer log.SetPrefixDefault()
-		log.SetPrefix("[INIT][ERROR] ")
-		log.Fatalf("%s\n", err)
-	}
-}
+// func checkErr(err error, log *debug.Log) {
+// 	if err != nil {
+// 		defer log.SetPrefixDefault()
+// 		log.SetPrefix("[INIT][ERROR] ")
+// 		log.Fatalf("%s\n", err)
+// 	}
+// }

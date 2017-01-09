@@ -4,16 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/msawangwan/unet/env"
+	"github.com/msawangwan/unet-srv-go/env"
 
-	"github.com/msawangwan/unet/engine/game"
-	"github.com/msawangwan/unet/engine/session"
+	"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/session"
 
-	"github.com/msawangwan/unet/service/exception"
+	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
 // POST game/update/start
-func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		skey *session.Key
 		loop *game.Update
@@ -21,7 +21,7 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
 	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
+		return raiseServerError(err)
 	}
 
 	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat) // TODO: rename to game state or something better
@@ -38,8 +38,14 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 	return nil
 }
 
+// // JoinGame : POST
+// func JoinGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+
+// 	return nil
+// }
+
 // POST game/update/enter
-func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		skey *session.Key
 		loop *game.Update
@@ -47,17 +53,17 @@ func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
 	if err != nil {
-		return throw(err, "MISSING KEY", 500)
+		return raise(err, "MISSING KEY", 500)
 	}
 
 	//	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat)
 
 	loop, err = game.EnterExisting(skey.RedisFormat, e.GameManager, e.Log)
 	if err != nil {
-		return throw(err, err.Error(), 500)
-	} else {
-		e.Printf("joined an existing game on the server: %s\n", loop.Label)
+		return raise(err, err.Error(), 500)
 	}
+
+	e.Printf("joined an existing game on the server: %s\n", loop.Label)
 
 	json.NewEncoder(w).Encode(&game.Frame{})
 
@@ -65,7 +71,7 @@ func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exc
 }
 
 // POST game/update/kill
-func KillGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func KillGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		skey *session.Key
 	)
@@ -74,20 +80,20 @@ func KillGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exce
 
 	err := json.NewDecoder(r.Body).Decode(&skey)
 	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
+		raiseServerError(err)
 	}
 
 	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat) // TODO: rename to game state or something better
 
 	_, err = game.EndActive(skey.RedisFormat, rkey, e.GameManager, e.Log)
 	if err != nil {
-		return &exception.Handler{err, err.Error(), 500}
+		raiseServerError(err)
 	}
 
 	return nil
 }
 
 // POST game/update/frame
-func GameFrameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) *exception.Handler {
+func GameFrameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	return nil
 }

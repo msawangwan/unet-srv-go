@@ -5,7 +5,7 @@ import (
 
 	"net/http"
 
-	"github.com/msawangwan/unet/service/exception"
+	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
 var (
@@ -15,11 +15,14 @@ var (
 func checkBody(r *http.Request) error {
 	if r.Body == nil {
 		return errNilBody
-	} else {
-		return nil
 	}
+	return nil
 }
 
-func throw(err error, msg string, code int) *exception.Handler {
-	return &exception.Handler{err, msg, code}
+func raise(err error, msg string, code int) exception.Handler {
+	return exception.Handler{
+		Error:   err,
+		Message: msg,
+		Code:    code,
+	}
 }

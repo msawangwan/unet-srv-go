@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
 )
 
 // redis:  list of active sessions
@@ -182,40 +182,40 @@ func (i *Instance) LoadSessionInstanceIntoMemory(p *pool.Pool, l *debug.Log) (*s
 	return &k, nil
 }
 
-func (i *Instance) KeyFromInstance(p *pool.Pool, l *debug.Log) (*string, error) {
-	conn, err := p.Get()
-	if err != nil {
-		return nil, err
-	}
+// func (i *Instance) KeyFromInstance(p *pool.Pool, l *debug.Log) (*string, error) {
+// 	conn, err := p.Get()
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	defer func() {
-		p.Put(conn)
-		l.SetPrefixDefault()
-	}()
+// 	defer func() {
+// 		p.Put(conn)
+// 		l.SetPrefixDefault()
+// 	}()
 
-	l.SetPrefix("[SESSION][KEY_FROM_INSTANCE] ")
+// 	l.SetPrefix("[SESSION][KEY_FROM_INSTANCE] ")
 
-	k := kSession + i.SessionID
+// 	k := kSession + i.SessionID
 
-	// TODO: use WATCH
-	count, err := conn.Cmd("HGET", k, kSessionPlayerCount).Int()
-	if err != nil {
-		return nil, err
-	}
+// 	// TODO: use WATCH
+// 	count, err := conn.Cmd("HGET", k, kSessionPlayerCount).Int()
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	if count >= 2 {
-		l.Printf("session at max capacity (2): %d\n", count)
-	}
+// 	if count >= 2 {
+// 		l.Printf("session at max capacity (2): %d\n", count)
+// 	}
 
-	count += 1
+// 	count += 1
 
-	err = conn.Cmd("HSET", k, kSessionPlayerCount, count).Err
-	if err != nil {
-		return nil, err // TODO: rollback??
-	}
+// 	err = conn.Cmd("HSET", k, kSessionPlayerCount, count).Err
+// 	if err != nil {
+// 		return nil, err // TODO: rollback??
+// 	}
 
-	return &k, nil
-}
+// 	return &k, nil
+// }
 
 func generateSeed() int64 {
 	return time.Now().UTC().UnixNano()

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/msawangwan/unet/db"
-	"github.com/msawangwan/unet/engine/quadrant"
-	"github.com/msawangwan/unet/env"
+	"github.com/msawangwan/unet-srv-go/db"
+	"github.com/msawangwan/unet-srv-go/engine/quadrant"
+	"github.com/msawangwan/unet-srv-go/env"
 )
 
 type Profile struct {

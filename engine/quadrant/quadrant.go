@@ -5,7 +5,7 @@ package quadrant
 
 import (
 	"fmt"
-	"github.com/msawangwan/unet/engine/prng"
+	"github.com/msawangwan/unet-srv-go/engine/prng"
 )
 
 // type Subdivider is the interface implemented by types that can sort nodes into quadrants

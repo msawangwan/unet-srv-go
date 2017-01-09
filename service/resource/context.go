@@ -3,18 +3,17 @@ package resource
 import (
 	"net/http"
 
-	"github.com/msawangwan/unet/env"
-	"github.com/msawangwan/unet/service/exception"
+	"github.com/msawangwan/unet-srv-go/env"
+	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
-// type Context allows resource endpoints to access important environment
-// variables
+// Context allows resource endpoints to access important environment variables
 type Context struct {
 	*env.Global
-	Handle func(*env.Global, http.ResponseWriter, *http.Request) *exception.Handler
+	Handle func(*env.Global, http.ResponseWriter, *http.Request) exception.Handler
 }
 
-// ServeHTTP implements http.Handler
+// ServeHTTP implements http.Handler, should also handle all HTTP errors (todo)
 func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if e := c.Handle(c.Global, w, r); e != nil {
 		c.SetPrefix("[RESOURCE][SERVE] ")

@@ -2,8 +2,8 @@ package model
 
 import (
 	"fmt"
-	"github.com/msawangwan/unet/db"
-	"github.com/msawangwan/unet/engine/quadrant"
+	"github.com/msawangwan/unet-srv-go/db"
+	"github.com/msawangwan/unet-srv-go/engine/quadrant"
 )
 
 type WorldState struct {

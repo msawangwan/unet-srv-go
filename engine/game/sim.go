@@ -1,6 +1,7 @@
 package game
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -8,30 +9,35 @@ import (
 	"encoding/json"
 
 	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/msawangwan/unet/debug"
+	"github.com/msawangwan/unet-srv-go/debug"
 )
 
 const (
-	kMaxPlayersAllowed = 10
+	maxPlayersAllowed = 10
 )
 
 const (
-	kSimulationKey = "sim:key"
+	keySimulationInstance = "sim:key"
 )
 
 const (
-	kSimulationLabel       = "label"
-	kSimulationFrame       = "frame"
-	kSimulationPlayerCount = "player_count"
-	kSimulationPlayerList  = "player_list"
+	keySimulationLabel = "label"
+	keyFrame           = "frame"
+	keyPlayerCount     = "player_count"
+	keyPlayerList      = "player_list"
 )
 
 const (
-	kDebugTimeout   = 1 * time.Hour
-	kConnTimeout    = 5 * time.Minute
-	kUpdateInterval = 2500 * time.Millisecond
+	durTimeoutDebug   = 1 * time.Hour
+	durTimeout        = 5 * time.Minute
+	durUpdateInterval = 2500 * time.Millisecond
 )
 
+var (
+	errAlreadyExists = errors.New("simulation already exists, failed to create")
+)
+
+// Simulation is a game update loop abstraction
 type Simulation struct {
 	Label string `json:"label"`
 	Seed  int64  `json:"seed"`
@@ -50,18 +56,20 @@ type Simulation struct {
 	sync.Mutex `json:"-"`
 }
 
-func NewSimulation(label string, seed int64, conns *pool.Pool, log *debug.Log) (*Simulation, error) {
+// NewSimulation returns a new simulation instance
+func NewSimulation(label string, seed int64, errc error chan, conns *pool.Pool, log *debug.Log) (*Simulation, error) {
 	s := &Simulation{
 		Label: label,
 		Seed:  seed,
 
-		Players: make([]string, 0, kMaxPlayersAllowed),
+		Players: make([]string, 0, maxPlayersAllowed),
 
 		OnComplete: make(chan bool),
-		OnError:    make(chan error),
+        OnError: errc,
+		// OnError:    make(chan error),
 
-		Timer:  time.NewTimer(kDebugTimeout),
-		Ticker: time.NewTicker(kUpdateInterval),
+		Timer:  time.NewTimer(durTimeoutDebug),
+		Ticker: time.NewTicker(durUpdateInterval),
 
 		Pool: conns,
 		Log:  log,
@@ -79,21 +87,22 @@ func NewSimulation(label string, seed int64, conns *pool.Pool, log *debug.Log) (
 
 	s.SetPrefix("[GAME][SIMULATION][NEW] ")
 
-	key := makeKey(kSimulationKey, s.Label)
+	key := makeKey(keySimulationInstance, s.Label)
 
 	check, err := conn.Cmd("EXISTS", key).Int()
 	if err != nil {
 		return nil, err
 	} else if check == 1 {
-		s.Printf("already exists: %s ...", key)
+		return nil, errAlreadyExists
 	} else {
-		s.Printf("created new simulation: [key %s] [label %s] ...", key, s.Label)
-		conn.Cmd("HMSET", key, kSimulationLabel, s.Label)
+		s.Printf("created new simulation: [key: %s] [label: %s] ...", key, s.Label)
+		conn.Cmd("HMSET", key, keySimulationLabel, s.Label, keyFrame, 0)
 	}
 
 	return s, nil
 }
 
+// Join is called by the client to register to simulation updates
 func (s *Simulation) Join(player string) error {
 	conn, err := s.Get()
 	if err != nil {
@@ -110,10 +119,10 @@ func (s *Simulation) Join(player string) error {
 
 	s.SetPrefix("[GAME][SIMULATION][JOIN] ")
 
-	key := makeKey(kSimulationKey, s.Label)
+	key := makeKey(keySimulationInstance, s.Label)
 
 	n := len(s.Players)
-	if n >= kMaxPlayersAllowed {
+	if n >= maxPlayersAllowed {
 		s.Printf("more than 2 players") // TODO: handle
 	}
 
@@ -130,7 +139,7 @@ func (s *Simulation) Join(player string) error {
 		return err
 	}
 
-	conn.Cmd("HMSET", key, kSimulationPlayerCount, len(s.Players), kSimulationPlayerList, string(all[:]))
+	conn.Cmd("HMSET", key, keyPlayerCount, len(s.Players), keyPlayerList, string(all[:]))
 
 	s.Printf("playerlist: %s\n", string(all[:]))
 	s.Printf("playerlist length: %d\n", len(s.Players))
@@ -138,6 +147,7 @@ func (s *Simulation) Join(player string) error {
 	return nil
 }
 
+// OnTick is the simulation update loop
 func (s *Simulation) OnTick() {
 	conn, err := s.Get()
 	if err != nil {
@@ -146,33 +156,62 @@ func (s *Simulation) OnTick() {
 	}
 	defer s.Put(conn)
 
-	key := makeKey(kSimulationKey, s.Label)
+	key := makeKey(keySimulationInstance, s.Label)
+
+    onTimeout := func() {
+        s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
+        s.Printf("timer expired: %s\n", s.Label)
+        defer s.SetPrefixDefault()
+    }()
+
+    onTick := func() {
+        s.SetPrefix("[UPDATE][ON_TICK] ")
+        s.Printf("tick: %s\n", s.Label)
+        defer s.SetPrefixDefault()
+
+        conn.Cmd("HINCRBY", key, keyFrame, 1)
+    }()
+
+    onComplete := func() {
+        s.SetPrefix("[UPDATE][ON_DONE] ")
+        s.Printf("loop terminated: %s\n", s.Label)
+        defer s.SetPrefixDefault()
+
+        s.Timer.Stop()
+        s.Ticker.Stop()
+    }()
 
 	for {
 		select {
-		case <-s.Timer.C:
-			s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
-			s.Printf("timer expired: %s\n", s.Label)
-			s.SetPrefixDefault()
 		case <-s.Ticker.C:
-			s.SetPrefix("[UPDATE][ON_TICK] ")
-			s.Printf("tick: %s\n", s.Label)
-			s.SetPrefixDefault()
+            onTick()
+			// s.SetPrefix("[UPDATE][ON_TICK] ")
+			// s.Printf("tick: %s\n", s.Label)
+			// s.SetPrefixDefault()
 
-			conn.Cmd("HINCRBY", key, kSimulationFrame, 1)
+			// conn.Cmd("HINCRBY", key, keyFrame, 1)
+		case <-s.Timer.C:
+            onTimeout()
+			// s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
+			// s.Printf("timer expired: %s\n", s.Label)
+			// s.SetPrefixDefault()
+
+            return
 		case <-s.OnComplete:
-			s.SetPrefix("[UPDATE][ON_DONE] ")
-			s.Printf("loop terminated: %s\n", s.Label)
-			s.SetPrefixDefault()
+            onComplete()
+			// s.SetPrefix("[UPDATE][ON_DONE] ")
+			// s.Printf("loop terminated: %s\n", s.Label)
+			// s.SetPrefixDefault()
 
-			s.Timer.Stop()
-			s.Ticker.Stop()
+			// s.Timer.Stop()
+			// s.Ticker.Stop()
 
 			return
 		}
 	}
 }
 
+// OnDestroy terminates the update loop and thus the associated goroutine, and simulation
 func (s *Simulation) OnDestroy() {
 	s.OnComplete <- true
 	close(s.OnComplete)
@@ -180,16 +219,19 @@ func (s *Simulation) OnDestroy() {
 
 func (s *Simulation) sendErr(err error) {
 	s.OnError <- err
-	close(s.OnError)
+	// close(s.OnError)
 }
+
 func makeKey(prefix, id string) string {
 	return fmt.Sprintf("%s:%s", prefix, id)
 }
 
+// GenerateSeed returns a new simulation game world seed
 func GenerateSeed() int64 {
 	return time.Now().UTC().UnixNano()
 }
 
+// GenerateSeedDebug returns the same world seed every time, for debug only
 func GenerateSeedDebug() int64 {
 	return 1482284596187742126
 }

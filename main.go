@@ -3,16 +3,15 @@ package main
 import (
 	"log"
 	"os"
-	//	"runtime"
 
 	"net/http"
 
-	"github.com/msawangwan/unet/config"
-	"github.com/msawangwan/unet/db"
-	"github.com/msawangwan/unet/debug"
-	"github.com/msawangwan/unet/engine/game"
-	"github.com/msawangwan/unet/env"
-	"github.com/msawangwan/unet/service/gateway"
+	"github.com/msawangwan/unet-srv-go/config"
+	"github.com/msawangwan/unet-srv-go/db"
+	"github.com/msawangwan/unet-srv-go/debug"
+	"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/env"
+	"github.com/msawangwan/unet-srv-go/service/gateway"
 )
 
 const (
@@ -82,6 +81,7 @@ func main() {
 
 	environment = env.New(
 		conf.MaxGameSessionsAllowed,
+		make(chan error),
 		param,
 		redis,
 		postgre,
@@ -92,7 +92,7 @@ func main() {
 		mainUpdate *game.UpdateHandler
 	)
 
-	mainUpdate = game.NewUpdateHandle(environment.Pool, logger)
+	mainUpdate = game.NewUpdateHandle(environment.GlobalError, environment.Pool, logger)
 
 	go mainUpdate.Monitor()
 

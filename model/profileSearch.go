@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/msawangwan/unet/db"
+	"github.com/msawangwan/unet-srv-go/db"
 )
 
 type ProfileSearch struct {

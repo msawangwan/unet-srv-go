@@ -5,15 +5,17 @@ import (
 
 	"net/http"
 
-	"github.com/msawangwan/unet/env"
-	"github.com/msawangwan/unet/service/route"
+	"github.com/msawangwan/unet-srv-go/env"
+	"github.com/msawangwan/unet-srv-go/service/route"
 )
 
+// Multiplexer is the main client gateway
 type Multiplexer struct {
 	*env.Global
 	*route.Table
 }
 
+// NewMultiplexer is a factory function
 func NewMultiplexer(environment *env.Global, routeTable *route.Table) *Multiplexer {
 	if routeTable == nil {
 		return &Multiplexer{
@@ -28,6 +30,7 @@ func NewMultiplexer(environment *env.Global, routeTable *route.Table) *Multiplex
 	}
 }
 
+// ServeHTTP implements http.HandlerFunc
 func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var (
 		foundRoute bool   = false
