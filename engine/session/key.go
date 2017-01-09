@@ -31,7 +31,8 @@ func NewKeyGenerator(p *pool.Pool, l *debug.Log) (*KeyGenerator, error) {
 	return kgen, nil
 }
 
-func (kgen *KeyGenerator) RegisterNewSession(p *pool.Pool) (*int, error) {
+// GenerateNext returns an int to be used as a key for a session handle
+func (kgen *KeyGenerator) GenerateNext(p *pool.Pool) (*int, error) {
 	conn, err := p.Get()
 	if err != nil {
 		return nil, err
@@ -42,7 +43,7 @@ func (kgen *KeyGenerator) RegisterNewSession(p *pool.Pool) (*int, error) {
 		kgen.SetPrefixDefault()
 	}()
 
-	kgen.SetPrefix("[SESSION][REGISTER] ")
+	kgen.SetPrefix("[SESSION][KEY_GEN] ")
 
 	n, err := conn.Cmd("INCR", kSessionKey).Int()
 	if err != nil {

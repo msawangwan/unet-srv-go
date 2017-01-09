@@ -5,6 +5,11 @@ import (
 	"github.com/msawangwan/unet/debug"
 )
 
+// key
+const (
+	kSessionLobbyList = "session:lobby:all"
+)
+
 type Lobby struct {
 	Listing []string `json:"listing"`
 }

@@ -1,10 +1,14 @@
 package game
 
 import (
-	"github.com/mediocregopher/radix.v2/pool"
-	"github.com/msawangwan/unet/debug"
+	"fmt"
 	"sync"
 	"time"
+
+	"encoding/json"
+
+	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/msawangwan/unet/debug"
 )
 
 const (
@@ -29,21 +33,21 @@ const (
 )
 
 type Simulation struct {
-	Label string
-	Seed  int64
+	Label string `json:"label"`
+	Seed  int64  `json:"seed"`
 
-	Players []string
+	Players []string `json:"players"`
 
-	OnComplete chan bool
-	OnError    chan error
+	OnComplete chan bool  `json:"-"`
+	OnError    chan error `json:"-"`
 
-	Timer  *time.Timer
-	Ticker *time.Ticker
+	Timer  *time.Timer  `json:"-"`
+	Ticker *time.Ticker `json:"-"`
 
-	*pool.Pool
-	*debug.Log
+	*pool.Pool `json:"-"`
+	*debug.Log `json:"-"`
 
-	sync.Mutex
+	sync.Mutex `json:"-"`
 }
 
 func NewSimulation(label string, seed int64, conns *pool.Pool, log *debug.Log) (*Simulation, error) {
@@ -60,7 +64,7 @@ func NewSimulation(label string, seed int64, conns *pool.Pool, log *debug.Log) (
 		Ticker: time.NewTicker(kUpdateInterval),
 
 		Pool: conns,
-		Log, log,
+		Log:  log,
 	}
 
 	conn, err := s.Get()
@@ -77,15 +81,13 @@ func NewSimulation(label string, seed int64, conns *pool.Pool, log *debug.Log) (
 
 	key := makeKey(kSimulationKey, s.Label)
 
-	exist, err := conn.Cmd("EXISTS", key)
+	check, err := conn.Cmd("EXISTS", key).Int()
 	if err != nil {
 		return nil, err
-	}
-
-	if exists == 1 {
+	} else if check == 1 {
 		s.Printf("already exists: %s ...", key)
 	} else {
-		s.Print("created new simulation: [key %s] [label %s] ...", key, s.Label)
+		s.Printf("created new simulation: [key %s] [label %s] ...", key, s.Label)
 		conn.Cmd("HMSET", key, kSimulationLabel, s.Label)
 	}
 
@@ -142,7 +144,7 @@ func (s *Simulation) OnTick() {
 		s.sendErr(err)
 		return
 	}
-	defer u.Put(conn)
+	defer s.Put(conn)
 
 	key := makeKey(kSimulationKey, s.Label)
 
@@ -158,7 +160,7 @@ func (s *Simulation) OnTick() {
 			s.SetPrefixDefault()
 
 			conn.Cmd("HINCRBY", key, kSimulationFrame, 1)
-		case <-u.Done:
+		case <-s.OnComplete:
 			s.SetPrefix("[UPDATE][ON_DONE] ")
 			s.Printf("loop terminated: %s\n", s.Label)
 			s.SetPrefixDefault()
@@ -184,10 +186,10 @@ func makeKey(prefix, id string) string {
 	return fmt.Sprintf("%s:%s", prefix, id)
 }
 
-func generateSeed() int64 {
+func GenerateSeed() int64 {
 	return time.Now().UTC().UnixNano()
 }
 
-func generateSeedDebug() int64 {
+func GenerateSeedDebug() int64 {
 	return 1482284596187742126
 }

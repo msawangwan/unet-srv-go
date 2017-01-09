@@ -61,10 +61,20 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("session/availability"),
 				Handler: resource.Context{environment, handler.CheckSessionNameAvailable},
 			},
-			"session/new/key": &route{
+			"session/register/key": &route{
 				Method:  "GET",
-				Pattern: cache("session/new/key"),
+				Pattern: cache("session/register/key"),
 				Handler: resource.Context{environment, handler.RegisterNewSession},
+			},
+			"session/register/name": &route{
+				Method:  "POST",
+				Pattern: cache("session/register/name"),
+				Handler: resource.Context{environment, handler.SetPlayerOwnerName},
+			},
+			"session/host/name/availability": &route{
+				Method:  "POST",
+				Pattern: cache("session/host/name/availability"),
+				Handler: resource.Context{environment, handler.CheckGameNameAvailable},
 			},
 			"session/host/instance": &route{
 				Method:  "POST",

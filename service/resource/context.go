@@ -17,6 +17,8 @@ type Context struct {
 // ServeHTTP implements http.Handler
 func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if e := c.Handle(c.Global, w, r); e != nil {
+		c.SetPrefix("[RESOURCE][SERVE] ")
+		defer c.SetPrefixDefault()
 		c.Printf("got an error %s\n", e.Message)
 		http.Error(w, e.Message, e.Code)
 	}

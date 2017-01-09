@@ -11,17 +11,17 @@ import (
 )
 
 // key format;
-// [category]:[label]:[info]
+// [category]:[label]:[info]:
 
 // key
 const (
-	kSessionHandle = "session::handle"
+	kSessionHandle = "session:handle"
 )
 
 // key values
 const (
-	kSessionID    = "id"
-	kSessionOwner = "owner"
+	kSessionHandleID = "id"
+	kSessionOwner    = "owner"
 )
 
 // type Handle represents a client session, every client is mapped to a handle and the handle contains:
@@ -35,13 +35,27 @@ type Handle struct {
 
 func NewHandle(ownerIP string) (*Handle, error) {
 	h := &Handle{
-		Owner:   "NEED_NAME",
 		OwnerIP: ownerIP,
 	}
 	return h, nil
 }
 
-func (h *Handle) AttachToSimulation(sim *game.Simulation) error {
+var (
+	ErrOwnerMismatchIP = errors.New("owner ip doesn't match owner")
+)
+
+func (h *Handle) SetOwner(owner, ownerip string) error {
+	if h.OwnerIP == ownerip {
+		h.Owner = owner
+		return nil
+	} else {
+		h.Owner = owner // TODO: remove when not debugging
+		return ErrOwnerMismatchIP
+	}
+}
+
+func (h *Handle) AttachSimulation(sim *game.Simulation) error {
+	h.Simulation = sim
 	return nil
 }
 
@@ -91,7 +105,7 @@ func (hm *HandleManager) Add(id int, handle *Handle) error {
 		return ErrHandleAlreadyRegistered
 	} else {
 		key := kSessionHandle + ":" + string(id)
-		hm.Cmd("HMSET", key, kSessionID, id, kSessionOwner, handle.Owner)
+		hm.Cmd("HMSET", key, kSessionHandleID, id, kSessionOwner, handle.Owner)
 		hm.Table[id] = handle
 		hm.Printf("succeeded in adding session [id: %d] ...\n", id)
 		return nil
