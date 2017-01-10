@@ -120,7 +120,7 @@ func CheckGameNameAvailable(g *env.Global, w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// FetchAllActiveSessions : GET session/lobby/list
+// FetchAllActiveSessions : GET session/join/lobby/list
 func FetchAllActiveSessions(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		l = &session.Lobby{}

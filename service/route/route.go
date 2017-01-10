@@ -53,26 +53,26 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("session/host/simulation"),
 				Handler: resource.Context{environment, handler.HostAndAttachNewSimulation},
 			},
-			"session/lobby/list": &route{
+			"session/join/lobby/list": &route{
 				Method:  "GET",
-				Pattern: cache("session/active/list"),
+				Pattern: cache("session/join/lobby/list"),
 				Handler: resource.Context{environment, handler.FetchAllActiveSessions},
 			},
-			"game/update/start": &route{
-				Method:  "POST",
-				Pattern: cache("game/update/start"),
-				Handler: resource.Context{environment, handler.StartGameUpdate},
-			},
-			"game/update/enter": &route{
-				Method:  "POST",
-				Pattern: cache("game/update/enter"),
-				Handler: resource.Context{environment, handler.EnterGameUpdate},
-			},
-			"game/update/frame": &route{
-				Method:  "POST",
-				Pattern: cache("game/update/frame"),
-				Handler: resource.Context{environment, handler.GameFrameUpdate},
-			},
+			//			"game/update/start": &route{
+			//				Method:  "POST",
+			//				Pattern: cache("game/update/start"),
+			//				Handler: resource.Context{environment, handler.StartGameUpdate},
+			//			},
+			//			"game/update/enter": &route{
+			//				Method:  "POST",
+			//				Pattern: cache("game/update/enter"),
+			//				Handler: resource.Context{environment, handler.EnterGameUpdate},
+			//			},
+			//			"game/update/frame": &route{
+			//				Method:  "POST",
+			//				Pattern: cache("game/update/frame"),
+			//				Handler: resource.Context{environment, handler.GameFrameUpdate},
+			//			},
 		},
 	}
 

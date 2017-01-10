@@ -59,10 +59,7 @@ func (h *Handle) AttachSimulation(sim *game.Simulation) error {
 	return nil
 }
 
-// type HandleManager is responsible for:
-// - creating handles
-// - managing a handles lifetime
-// - storing them in the db
+// type HandleManager is responsible for creating and managing handles (aka clients)
 type HandleManager struct {
 	Table    map[int]*Handle
 	capacity int

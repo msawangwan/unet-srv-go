@@ -8,7 +8,7 @@ import (
 	"github.com/msawangwan/unet-srv-go/db"
 	"github.com/msawangwan/unet-srv-go/debug"
 
-	// "github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/game"
 	"github.com/msawangwan/unet-srv-go/engine/session"
 )
 
@@ -19,9 +19,10 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	// GameManager          *game.Manager
 	SessionHandleManager *session.HandleManager
 	SessionKeyGenerator  *session.KeyGenerator
+
+	GameSimulationTable *game.SimulationTable
 
 	GlobalError chan error
 
@@ -45,15 +46,19 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 	kgen, err := session.NewKeyGenerator(redis.Pool, log)
 	checkErr(err, log)
 
+	gsimtable, err := game.NewSimulationTable(100, redis.Pool, log)
+	checkErr(err, log)
+
 	g := &Global{
 		GameParameters: param,
 		RedisHandle:    redis,
 		PostgreHandle:  pg,
 		Log:            log,
 
-		// GameManager:          game.NewGameManager(maxSessionsPerHost),
 		SessionHandleManager: hmanager,
 		SessionKeyGenerator:  kgen,
+
+		GameSimulationTable: gsimtable,
 
 		GlobalError: errc,
 	}

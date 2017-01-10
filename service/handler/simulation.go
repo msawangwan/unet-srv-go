@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/msawangwan/unet-srv-go/engine/game"
-	"github.com/msawangwan/unet-srv-go/engine/session"
 	"github.com/msawangwan/unet-srv-go/env"
 
-	// "github.com/msawangwan/unet-srv-go/engine/game"
-	// "github.com/msawangwan/unet-srv-go/engine/session"
+	"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/session"
 
 	"github.com/msawangwan/unet-srv-go/service/exception"
 )
@@ -49,12 +47,41 @@ func HostAndAttachNewSimulation(g *env.Global, w http.ResponseWriter, r *http.Re
 		return raise(err, err.Error(), 500)
 	}
 
-	err = shandle.AttachSimulation(sim)
+	g.GameSimulationTable.Add(sim.Label, sim)
+	json.NewEncoder(w).Encode(sim)
+
+	return nil
+}
+
+// AttachSimulation is like joining
+func AttachSimulation(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	cleanup := setPrefix(logPrefixSession, "ATTACH", g.Log)
+	defer cleanup()
+
+	j, err := parseJSON(r.Body)
 	if err != nil {
 		return raise(err, err.Error(), 500)
 	}
 
-	json.NewEncoder(w).Encode(sim)
+	k := int(j.(map[string]interface{})["key"].(float64))
+	label := j.(map[string]interface{})["value"].(string)
+
+	sh, err := g.SessionHandleManager.Get(k)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	s, err := g.GameSimulationTable.Get(label)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	err = sh.AttachSimulation(s)
+	if err != nil {
+		return raise(err, err.Error(), 500)
+	}
+
+	json.NewEncoder(w).Encode(s)
 
 	return nil
 }

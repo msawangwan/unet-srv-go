@@ -37,6 +37,65 @@ var (
 	errAlreadyExists = errors.New("simulation already exists, failed to create")
 )
 
+type SimulationTable struct {
+	AllSimulations map[string]*Simulation
+	sync.Mutex
+	*pool.Pool
+	*debug.Log
+}
+
+func NewSimulationTable(maxSimulations int, conns *pool.Pool, log *debug.Log) (*SimulationTable, error) {
+	st := &SimulationTable{
+		AllSimulations: make(map[string]*Simulation, maxSimulations),
+		Pool:           conns,
+		Log:            log,
+	}
+	return st, nil
+}
+
+func (st *SimulationTable) Add(label string, sim *Simulation) error {
+	st.Lock()
+	defer func() {
+		st.Unlock()
+		st.SetPrefixDefault()
+	}()
+
+	st.SetPrefix("[SIMULATION][TABlE][ADD] ")
+
+	if s := st.AllSimulations[label]; s == nil {
+		st.Printf("adding sim %s", sim.Label)
+		st.AllSimulations[label] = sim
+		st.Cmd("RPUSH", "session:lobby:all", sim.Label)
+	} else {
+		st.Printf("failed to add sim %s", sim.Label)
+	}
+
+	return nil
+}
+
+func (st *SimulationTable) Get(label string) (*Simulation, error) {
+	st.Lock()
+	defer func() {
+		st.Unlock()
+		st.SetPrefixDefault()
+	}()
+
+	st.SetPrefix("[SIMULATION][TABLE][GET] ")
+
+	var (
+		sim *Simulation
+	)
+
+	if contains := st.AllSimulations[label]; contains != nil {
+		sim = contains
+	} else {
+		return nil, errors.New("does not exists")
+	}
+	st.Printf("accessing simulation: %v", sim)
+
+	return sim, nil
+}
+
 // Simulation is a game update loop abstraction
 type Simulation struct {
 	Label string `json:"label"`
@@ -185,27 +244,11 @@ func (s *Simulation) OnTick() {
 		select {
 		case <-s.Ticker.C:
 			onTick()
-			// s.SetPrefix("[UPDATE][ON_TICK] ")
-			// s.Printf("tick: %s\n", s.Label)
-			// s.SetPrefixDefault()
-
-			// conn.Cmd("HINCRBY", key, keyFrame, 1)
 		case <-s.Timer.C:
 			onTimeout()
-			// s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
-			// s.Printf("timer expired: %s\n", s.Label)
-			// s.SetPrefixDefault()
-
 			return
 		case <-s.OnComplete:
 			onComplete()
-			// s.SetPrefix("[UPDATE][ON_DONE] ")
-			// s.Printf("loop terminated: %s\n", s.Label)
-			// s.SetPrefixDefault()
-
-			// s.Timer.Stop()
-			// s.Ticker.Stop()
-
 			return
 		}
 	}
