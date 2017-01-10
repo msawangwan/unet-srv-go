@@ -3,7 +3,8 @@ package exception
 import "fmt"
 
 type Handler interface {
-	Print(err error, code int) string
+	Raise(err error, code int)
+	Print() string
 }
 
 type ServerError struct {
@@ -12,7 +13,13 @@ type ServerError struct {
 	Code    int
 }
 
+func (se ServerError) Raise(err error, code int) {
+	se.Error = err
+	se.Message = err.Error()
+	se.Code = code
+}
+
 // Print implements the exception handler interface
-func (se ServerError) Print(err error, code int) string {
-	return fmt.Sprintf("[SERVER_ERROR][message: %s][code: %d]", err.Error(), code)
+func (se ServerError) Print() string {
+	return fmt.Sprintf("[SERVER_ERROR][message: %s][code: %d]", se.Message, se.Code)
 }
