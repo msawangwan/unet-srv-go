@@ -8,7 +8,7 @@ import (
 	"github.com/msawangwan/unet-srv-go/db"
 	"github.com/msawangwan/unet-srv-go/debug"
 
-	"github.com/msawangwan/unet-srv-go/engine/game"
+	// "github.com/msawangwan/unet-srv-go/engine/game"
 	"github.com/msawangwan/unet-srv-go/engine/session"
 )
 
@@ -19,7 +19,7 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	GameManager          *game.Manager
+	// GameManager          *game.Manager
 	SessionHandleManager *session.HandleManager
 	SessionKeyGenerator  *session.SessionKeyGeneratorerator
 
@@ -51,7 +51,7 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 		PostgreHandle:  pg,
 		Log:            log,
 
-		GameManager:          game.NewGameManager(maxSessionsPerHost),
+		// GameManager:          game.NewGameManager(maxSessionsPerHost),
 		SessionHandleManager: hmanager,
 		SessionKeyGenerator:  kgen,
 

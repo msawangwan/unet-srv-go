@@ -26,7 +26,8 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exce
 
 	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat) // TODO: rename to game state or something better
 
-	loop, err = game.CreateNew(skey.RedisFormat, rkey, e.GameManager, e.Pool, e.Log)
+	loop, err = game.CreateNew(skey.RedisFormat, rkey, nil, e.Pool, e.Log)
+	// loop, err = game.CreateNew(skey.RedisFormat, rkey, e.GameManager, e.Pool, e.Log)
 	if err != nil {
 		e.Printf("server failed to create new game %s\n", skey.RedisFormat)
 	} else {
@@ -58,7 +59,8 @@ func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exce
 
 	//	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat)
 
-	loop, err = game.EnterExisting(skey.RedisFormat, e.GameManager, e.Log)
+	// loop, err = game.EnterExisting(skey.RedisFormat, e.GameManager, e.Log)
+	loop, err = game.EnterExisting(skey.RedisFormat, nil, e.Log)
 	if err != nil {
 		return raise(err, err.Error(), 500)
 	}
@@ -85,7 +87,8 @@ func KillGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) excep
 
 	rkey := e.CreateHashKey_SessionGameUpdateLoop(skey.RedisFormat) // TODO: rename to game state or something better
 
-	_, err = game.EndActive(skey.RedisFormat, rkey, e.GameManager, e.Log)
+	_, err = game.EndActive(skey.RedisFormat, rkey, nil, e.Log)
+	// _, err = game.EndActive(skey.RedisFormat, rkey, e.GameManager, e.Log)
 	if err != nil {
 		raiseServerError(err)
 	}
