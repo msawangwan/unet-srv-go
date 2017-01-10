@@ -33,26 +33,6 @@ type Table struct {
 func NewRouteTable(environment *env.Global) *Table {
 	rt := &Table{
 		Endpoints: map[string]*route{
-			// "profile/availability": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("profile/availability"),
-			// 	Handler: resource.Context{environment, handler.CheckProfileAvailability},
-			// },
-			// "profile/new": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("profile/new"),
-			// 	Handler: resource.Context{environment, handler.CreateNewProfile},
-			// },
-			// "profile/world/load": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("profile/world/load"),
-			// 	Handler: resource.Context{environment, handler.GenerateWorldData},
-			// },
-			// "session/availability": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("session/availability"),
-			// 	Handler: resource.Context{environment, handler.CheckSessionNameAvailable},
-			// },
 			"session/register/key": &route{
 				Method:  "GET",
 				Pattern: cache("session/register/key"),
@@ -68,41 +48,16 @@ func NewRouteTable(environment *env.Global) *Table {
 				Pattern: cache("session/host/name/availability"),
 				Handler: resource.Context{environment, handler.CheckGameNameAvailable},
 			},
-			"session/host/instance": &route{
+			"session/host/simulation": &route{
 				Method:  "POST",
-				Pattern: cache("session/host/instance"),
-				Handler: resource.Context{environment, handler.HostNewGame},
+				Pattern: cache("session/host/simulation"),
+				Handler: resource.Context{environment, handler.HostAndAttachNewSimulation},
 			},
 			"session/lobby/list": &route{
 				Method:  "GET",
 				Pattern: cache("session/active/list"),
 				Handler: resource.Context{environment, handler.FetchAllActiveSessions},
 			},
-			// "session/new": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("session/new"),
-			// 	Handler: resource.Context{environment, handler.CreateNewSession},
-			// },
-			// "session/new/open": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("session/new/open"),
-			// 	Handler: resource.Context{environment, handler.MakeSessionActive},
-			// },
-			// "session/new/join": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("session/new/join"),
-			// 	Handler: resource.Context{environment, handler.JoinExistingSession},
-			// },
-			// "session/new/connect": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("session/new/connect"),
-			// 	Handler: resource.Context{environment, handler.EstablishSessionConnection},
-			// },
-			// "session/new/instance/key": &route{
-			// 	Method:  "POST",
-			// 	Pattern: cache("session/new/instance/key"),
-			// 	Handler: resource.Context{environment, handler.KeyFromInstance},
-			// },
 			"game/update/start": &route{
 				Method:  "POST",
 				Pattern: cache("game/update/start"),

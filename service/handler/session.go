@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/msawangwan/unet-srv-go/engine/game"
 	"github.com/msawangwan/unet-srv-go/engine/session"
 
 	"github.com/msawangwan/unet-srv-go/env"
@@ -17,8 +16,7 @@ import (
  * - RegisterNewSession creates a client session key, it is sent back as json to
  *     the client and stored on the server in redis and in memory
  * - SetPlayerOwnerName assigns the players name to its associated session handle
- *  - CheckGameNameAvailable checks if the game name is valid (for host)
- * - HostNewGame starts a new game, given a request to host by a client
+ * - CheckGameNameAvailable checks if the game name is valid (for host)
  * - FetchAllActive gets the lobby list
  */
 
@@ -122,50 +120,50 @@ func CheckGameNameAvailable(g *env.Global, w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// HostNewGame : POST session/host/instance
-func HostNewGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	cleanup := setPrefix(logPrefixSession, "HOST_NEW", g.Log)
-	defer cleanup()
+// // HostNewGame : POST session/host/instance
+// func HostNewGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+// 	cleanup := setPrefix(logPrefixSession, "HOST_NEW", g.Log)
+// 	defer cleanup()
 
-	j, err := parseJSON(r.Body)
-	if err != nil {
-		return raise(err, err.Error(), 500)
-	}
+// 	j, err := parseJSON(r.Body)
+// 	if err != nil {
+// 		return raise(err, err.Error(), 500)
+// 	}
 
-	k := int(j.(map[string]interface{})["key"].(float64))
-	label := j.(map[string]interface{})["value"].(string)
+// 	k := int(j.(map[string]interface{})["key"].(float64))
+// 	label := j.(map[string]interface{})["value"].(string)
 
-	var (
-		shandle *session.Handle
-	)
+// 	var (
+// 		shandle *session.Handle
+// 	)
 
-	shandle, err = g.SessionHandleManager.Get(k)
-	if err != nil {
-		return raise(err, err.Error(), 500)
-	}
+// 	shandle, err = g.SessionHandleManager.Get(k)
+// 	if err != nil {
+// 		return raise(err, err.Error(), 500)
+// 	}
 
-	if r.Header.Get("x-forwarded-for") == shandle.OwnerIP {
-		g.Printf("ip check ok") // TODO: do this sooner?
-	}
+// 	if r.Header.Get("x-forwarded-for") == shandle.OwnerIP {
+// 		g.Printf("ip check ok") // TODO: do this sooner?
+// 	}
 
-	var (
-		sim *game.Simulation
-	)
+// 	var (
+// 		sim *game.Simulation
+// 	)
 
-	sim, err = game.NewSimulation(label, game.GenerateSeedDebug(), g.GlobalError, g.Pool, g.Log)
-	if err != nil {
-		return raise(err, err.Error(), 500)
-	}
+// 	sim, err = game.NewSimulation(label, game.GenerateSeedDebug(), g.GlobalError, g.Pool, g.Log)
+// 	if err != nil {
+// 		return raise(err, err.Error(), 500)
+// 	}
 
-	err = shandle.AttachSimulation(sim)
-	if err != nil {
-		return raise(err, err.Error(), 500)
-	}
+// 	err = shandle.AttachSimulation(sim)
+// 	if err != nil {
+// 		return raise(err, err.Error(), 500)
+// 	}
 
-	json.NewEncoder(w).Encode(sim)
+// 	json.NewEncoder(w).Encode(sim)
 
-	return nil
-}
+// 	return nil
+// }
 
 // FetchAllActiveSessions : GET session/lobby/list
 func FetchAllActiveSessions(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
