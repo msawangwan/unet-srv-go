@@ -20,7 +20,7 @@ func checkBody(r *http.Request) error {
 }
 
 func raise(err error, msg string, code int) exception.Handler {
-	return exception.Handler{
+	return exception.ServerError{
 		Error:   err,
 		Message: msg,
 		Code:    code,
