@@ -38,11 +38,13 @@ func StartGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exce
 	return nil
 }
 
-// // JoinGame : POST
-// func JoinGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+func AttachSimulationToSessionhandle()
 
-// 	return nil
-// }
+// JoinGame : POST
+func JoinGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+
+	return nil
+}
 
 // POST game/update/enter
 func EnterGameUpdate(e *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
