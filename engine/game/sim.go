@@ -57,7 +57,7 @@ type Simulation struct {
 }
 
 // NewSimulation returns a new simulation instance
-func NewSimulation(label string, seed int64, errc error chan, conns *pool.Pool, log *debug.Log) (*Simulation, error) {
+func NewSimulation(label string, seed int64, errc chan error, conns *pool.Pool, log *debug.Log) (*Simulation, error) {
 	s := &Simulation{
 		Label: label,
 		Seed:  seed,
@@ -65,7 +65,7 @@ func NewSimulation(label string, seed int64, errc error chan, conns *pool.Pool, 
 		Players: make([]string, 0, maxPlayersAllowed),
 
 		OnComplete: make(chan bool),
-        OnError: errc,
+		OnError:    errc,
 		// OnError:    make(chan error),
 
 		Timer:  time.NewTimer(durTimeoutDebug),
@@ -158,47 +158,47 @@ func (s *Simulation) OnTick() {
 
 	key := makeKey(keySimulationInstance, s.Label)
 
-    onTimeout := func() {
-        s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
-        s.Printf("timer expired: %s\n", s.Label)
-        defer s.SetPrefixDefault()
-    }()
+	onTimeout := func() {
+		s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
+		s.Printf("timer expired: %s\n", s.Label)
+		defer s.SetPrefixDefault()
+	}()
 
-    onTick := func() {
-        s.SetPrefix("[UPDATE][ON_TICK] ")
-        s.Printf("tick: %s\n", s.Label)
-        defer s.SetPrefixDefault()
+	onTick := func() {
+		s.SetPrefix("[UPDATE][ON_TICK] ")
+		s.Printf("tick: %s\n", s.Label)
+		defer s.SetPrefixDefault()
 
-        conn.Cmd("HINCRBY", key, keyFrame, 1)
-    }()
+		conn.Cmd("HINCRBY", key, keyFrame, 1)
+	}()
 
-    onComplete := func() {
-        s.SetPrefix("[UPDATE][ON_DONE] ")
-        s.Printf("loop terminated: %s\n", s.Label)
-        defer s.SetPrefixDefault()
+	onComplete := func() {
+		s.SetPrefix("[UPDATE][ON_DONE] ")
+		s.Printf("loop terminated: %s\n", s.Label)
+		defer s.SetPrefixDefault()
 
-        s.Timer.Stop()
-        s.Ticker.Stop()
-    }()
+		s.Timer.Stop()
+		s.Ticker.Stop()
+	}()
 
 	for {
 		select {
 		case <-s.Ticker.C:
-            onTick()
+			onTick()
 			// s.SetPrefix("[UPDATE][ON_TICK] ")
 			// s.Printf("tick: %s\n", s.Label)
 			// s.SetPrefixDefault()
 
 			// conn.Cmd("HINCRBY", key, keyFrame, 1)
 		case <-s.Timer.C:
-            onTimeout()
+			onTimeout()
 			// s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
 			// s.Printf("timer expired: %s\n", s.Label)
 			// s.SetPrefixDefault()
 
-            return
+			return
 		case <-s.OnComplete:
-            onComplete()
+			onComplete()
 			// s.SetPrefix("[UPDATE][ON_DONE] ")
 			// s.Printf("loop terminated: %s\n", s.Label)
 			// s.SetPrefixDefault()
