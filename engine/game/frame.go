@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Frame is a type
 type Frame struct {
 	SessionID string `json:"sessionID"`
 

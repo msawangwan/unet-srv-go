@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/session"
 	"github.com/msawangwan/unet-srv-go/env"
 
 	// "github.com/msawangwan/unet-srv-go/engine/game"
@@ -55,7 +58,6 @@ func HostAndAttachNewSimulation(g *env.Global, w http.ResponseWriter, r *http.Re
 
 	return nil
 }
-func AttachSimulationToSessionhandle()
 
 // JoinGame : POST
 func JoinGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
