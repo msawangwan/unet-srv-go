@@ -21,7 +21,7 @@ type Global struct {
 
 	// GameManager          *game.Manager
 	SessionHandleManager *session.HandleManager
-	SessionKeyGenerator  *session.SessionKeyGeneratorerator
+	SessionKeyGenerator  *session.KeyGenerator
 
 	GlobalError chan error
 
@@ -31,13 +31,13 @@ type Global struct {
 
 // New returns a new instance of a global context object
 func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
-	checkErr := func(log *debug.Log) {
+	checkErr := func(err error, log *debug.Log) {
 		if err != nil {
 			defer log.SetPrefixDefault()
 			log.SetPrefix("[INIT][ERROR] ")
 			log.Fatalf("%s\n", err)
 		}
-	}(log)
+	}
 
 	hmanager, err := session.NewHandleManager(100, redis.Pool, log) // TODO: get max capactiy from conf
 	checkErr(err, log)

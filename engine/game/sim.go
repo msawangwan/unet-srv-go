@@ -162,7 +162,7 @@ func (s *Simulation) OnTick() {
 		s.SetPrefix("[UPDATE][ON_TIMEOUT] ")
 		s.Printf("timer expired: %s\n", s.Label)
 		defer s.SetPrefixDefault()
-	}()
+	}
 
 	onTick := func() {
 		s.SetPrefix("[UPDATE][ON_TICK] ")
@@ -170,7 +170,7 @@ func (s *Simulation) OnTick() {
 		defer s.SetPrefixDefault()
 
 		conn.Cmd("HINCRBY", key, keyFrame, 1)
-	}()
+	}
 
 	onComplete := func() {
 		s.SetPrefix("[UPDATE][ON_DONE] ")
@@ -179,7 +179,7 @@ func (s *Simulation) OnTick() {
 
 		s.Timer.Stop()
 		s.Ticker.Stop()
-	}()
+	}
 
 	for {
 		select {
