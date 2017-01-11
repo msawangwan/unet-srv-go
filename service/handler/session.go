@@ -32,7 +32,7 @@ func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) e
 		ip   string
 	)
 
-	skey, err := g.SessionKeyGenerator.GenerateNext(g.Pool)
+	skey, err := g.SessionKeyGenerator.GenerateNext()
 	if err != nil {
 		return raise(err, err.Error(), 500)
 	} else if skey == nil {

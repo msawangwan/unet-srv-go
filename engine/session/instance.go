@@ -44,7 +44,7 @@ func Create(sid string, p *pool.Pool, l *debug.Log) (*Instance, error) {
 	}
 
 	defer func() {
-		l.SetPrefix_Debug()
+		l.SetPrefixDefault()
 	}()
 
 	l.SetPrefix("[SESSION][CREATE] ")
@@ -67,7 +67,7 @@ func Join(gamename string, p *pool.Pool, l *debug.Log) (*Instance, error) {
 
 	defer func() {
 		p.Put(conn)
-		l.SetPrefix_Debug()
+		l.SetPrefixDefault()
 	}()
 
 	l.SetPrefix("[SESSION][JOIN] ")

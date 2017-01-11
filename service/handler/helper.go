@@ -18,12 +18,11 @@ func raiseServerError(err error) exception.Handler {
 func setPrefix(prefix string, specific string, l *debug.Log) func() {
 	l.SetPrefix(fmt.Sprintf("[HTTP][HANDLER][%s][%s] ", prefix, specific))
 	return func() {
-		defer l.SetPrefixDefault()
+		l.SetPrefixDefault()
 	}
 }
 
 func parseJSON(r io.Reader) (interface{}, error) {
-	// setPrefix("JSON", "PARSE", )
 	var (
 		j interface{}
 	)
@@ -34,7 +33,7 @@ func parseJSON(r io.Reader) (interface{}, error) {
 		return nil, err
 	}
 
-	return j.(map[string]interface{}), nil
+	return j, nil
 }
 
 func parseJSONInt(r io.Reader) (*int, error) {

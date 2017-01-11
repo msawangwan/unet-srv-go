@@ -31,8 +31,8 @@ package handler
 // }
 
 // JoinGame : POST
-//func JoinGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 //
+//func JoinGame(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 //	return nil
 //}
 

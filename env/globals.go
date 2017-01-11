@@ -65,22 +65,3 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 
 	return g
 }
-
-// Null  returns an empty global context for testing and debug
-func Null() *Global {
-	return &Global{
-		GameParameters: nil,
-		RedisHandle:    nil,
-		PostgreHandle:  nil,
-		Log:            nil,
-	}
-}
-
-// checkErr is an un-exported helper function for error checking
-// func checkErr(err error, log *debug.Log) {
-// 	if err != nil {
-// 		defer log.SetPrefixDefault()
-// 		log.SetPrefix("[INIT][ERROR] ")
-// 		log.Fatalf("%s\n", err)
-// 	}
-// }

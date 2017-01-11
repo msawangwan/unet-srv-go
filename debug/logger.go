@@ -6,10 +6,6 @@ import (
 	"os"
 )
 
-//const (
-//LOG_FILENAME = "debug.log"
-//)
-
 const (
 	PREFIX_DEBUG = "[DEBUG] "
 
@@ -66,17 +62,14 @@ func (l *Log) SetPrefixInit() {
 	l.SetPrefix(PREFIX_INIT)
 }
 
-// TODO: deprecated, refactor and delete
-func (l *Log) SetPrefix_Init() {
-	l.SetPrefix(PREFIX_INIT)
+func (l *Log) SetLevelDefault() {
+	l.SetFlags(log.Ldate | log.Ltime)
 }
 
-// TODO: deprecated, refactor and delete
-func (l *Log) SetPrefix_Debug() {
-	l.SetPrefix(PREFIX_DEBUG)
+func (l *Log) SetLevelDebug() {
+	l.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }
 
-// TODO: deprecated, refactor and delete
-func (l *Log) SetPrefix_DBActivity() {
-	l.SetPrefix(PREFIX_DB)
+func (l *Log) SetLevelVerbose() {
+	l.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
 }

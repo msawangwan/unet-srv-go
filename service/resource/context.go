@@ -15,12 +15,26 @@ type Context struct {
 
 // ServeHTTP implements http.Handler, should also handle all HTTP errors (todo)
 func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c.SetPrefix("[RESOURCE][SERVE] ")
+
+	defer func() {
+		c.SetPrefix("[RESOURCE][ERROR][CAUGHT_FATAL] ")
+		c.SetLevelVerbose()
+
+		if err := recover(); err != nil {
+			c.Printf("caught a fatal error (panic)")
+			c.Printf("%v", err)
+		}
+
+		c.SetPrefixDefault()
+		c.SetLevelDefault()
+	}()
+
+	c.Printf("route requested: %s", r.URL.Path)
+
 	if e := c.Handle(c.Global, w, r); e != nil {
-		c.SetPrefix("[RESOURCE][SERVE] ")
-		defer c.SetPrefixDefault()
-		//		c.Printf("got an error %s\n", e.Message)
-		//		http.Error(w, e.Message, e.Code)
-		//		e.Print()
-		e.Print()
+		c.SetPrefix("[RESOURCE][ERROR] ")
+		c.Printf("%s", e.Print())
+		c.SetPrefixDefault()
 	}
 }

@@ -30,48 +30,53 @@ type Table struct {
 
 // NewRouteTable creates a table of all available routes, addes them to a regex
 // cache and assigns their respective handlers
-func NewRouteTable(environment *env.Global) *Table {
+func NewRouteTable(globals *env.Global) *Table {
 	rt := &Table{
 		Endpoints: map[string]*route{
+			"client/handle/register": &route{
+				Method:  "POST",
+				Pattern: cache("client/handle/register"),
+				Handler: resource.Context{globals, handler.RegisterClientHandle},
+			},
 			"session/register/key": &route{
 				Method:  "GET",
 				Pattern: cache("session/register/key"),
-				Handler: resource.Context{environment, handler.RegisterNewSession},
+				Handler: resource.Context{globals, handler.RegisterNewSession},
 			},
 			"session/register/name": &route{
 				Method:  "POST",
 				Pattern: cache("session/register/name"),
-				Handler: resource.Context{environment, handler.SetPlayerOwnerName},
+				Handler: resource.Context{globals, handler.SetPlayerOwnerName},
 			},
 			"session/host/name/availability": &route{
 				Method:  "POST",
 				Pattern: cache("session/host/name/availability"),
-				Handler: resource.Context{environment, handler.CheckGameNameAvailable},
+				Handler: resource.Context{globals, handler.CheckGameNameAvailable},
 			},
 			"session/host/simulation": &route{
 				Method:  "POST",
 				Pattern: cache("session/host/simulation"),
-				Handler: resource.Context{environment, handler.HostAndAttachNewSimulation},
+				Handler: resource.Context{globals, handler.HostAndAttachNewSimulation},
 			},
 			"session/join/lobby/list": &route{
 				Method:  "GET",
 				Pattern: cache("session/join/lobby/list"),
-				Handler: resource.Context{environment, handler.FetchAllActiveSessions},
+				Handler: resource.Context{globals, handler.FetchAllActiveSessions},
 			},
 			//			"game/update/start": &route{
 			//				Method:  "POST",
 			//				Pattern: cache("game/update/start"),
-			//				Handler: resource.Context{environment, handler.StartGameUpdate},
+			//				Handler: resource.Context{globals, handler.StartGameUpdate},
 			//			},
 			//			"game/update/enter": &route{
 			//				Method:  "POST",
 			//				Pattern: cache("game/update/enter"),
-			//				Handler: resource.Context{environment, handler.EnterGameUpdate},
+			//				Handler: resource.Context{globals, handler.EnterGameUpdate},
 			//			},
 			//			"game/update/frame": &route{
 			//				Method:  "POST",
 			//				Pattern: cache("game/update/frame"),
-			//				Handler: resource.Context{environment, handler.GameFrameUpdate},
+			//				Handler: resource.Context{globals, handler.GameFrameUpdate},
 			//			},
 		},
 	}

@@ -37,6 +37,9 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		resource   string = r.URL.Path
 	)
 
+	mux.SetPrefix("[GATEWAY][MULTIPLEXER] ")
+	defer mux.SetPrefixDefault()
+
 	ps := strings.Split(resource, "/")
 
 	for path, route := range mux.Endpoints {
