@@ -12,13 +12,13 @@ const (
 	keyAllConnectedClientHandles = "client:session:handle:all"
 )
 
-// client session handle prefixes
+// client session handle key prefixes
 const (
 	prefixClientHandle           = "client:session:handle"
 	prefixClientSessionHandleKey = "client:session:handle:key"
 )
 
-// client session handle hash keys
+// client session handle hash fields
 const (
 	hashKeyClientName = "name_bare"
 )
@@ -27,8 +27,10 @@ func makeKey(prefix, id string) string {
 	return fmt.Sprintf("%s:%s", prefix, id)
 }
 
+// ClientHandle is currently not in use
 type ClientHandle struct{}
 
+// RegisterClient returns an id mapped to the passed in client (player) name, this id is used to uniquely identify the client on future requests
 func RegisterClient(clientName string, kgen *KeyGenerator, conns *pool.Pool, log *debug.Log) (*int, error) {
 	var (
 		id *int
