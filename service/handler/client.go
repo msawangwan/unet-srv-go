@@ -29,10 +29,6 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 	cleanup := setPrefix("CLIENT", "REGISTER_CLIENT_HANDLE", g.Log)
 	defer cleanup()
 
-	g.Printf("registered client ...")
-
-	g.Printf("%v", j)
-
 	v, ok := j.(map[string]interface{})
 	if ok {
 		cname, ok = v["value"].(string)
