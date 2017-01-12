@@ -24,7 +24,7 @@ func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) e
 		ip   string
 	)
 
-	skey, err := g.SessionKeyGenerator.GenerateNext()
+	skey, err := g.SessionKeyGenerator.GenerateNextClientID()
 	if err != nil {
 		return raise(err, err.Error(), 500)
 	} else if skey == nil {
@@ -92,19 +92,21 @@ func VerifyName(g *env.Global, w http.ResponseWriter, r *http.Request) exception
 	cleanup := setPrefix(logPrefixSession, "VERIFY_NAME", g.Log)
 	defer cleanup()
 
-	var (
-		la = &session.LobbyAvailability{}
-	)
+	//var (
+	//	la = &session.LobbyAvailability{}
+	//)
 
-	j, err := parseJSON(r.Body)
-	if err != nil {
-		return raiseServerError(err)
-	}
+	//j, err := parseJSON(r.Body)
+	//if err != nil {
+	//	return raiseServerError(err)
+	//}
 
-	s, err := marshallJSONString(j)
-	if err != nil {
-		return raiseServerError(err)
-	}
+	// TODO: LEFT OF HERE
+
+	//s, err := marshallJSONString(j)
+	//if err != nil {
+	//	return raiseServerError(err)
+	//}
 
 	g.Printf("CHECKING NAME AVAIL")
 

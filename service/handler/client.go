@@ -33,6 +33,8 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 	cleanup := setPrefix(logPrefixClient, "REGISTER_CLIENT_HANDLE", g.Log)
 	defer cleanup()
 
+	g.Printf("register new client handle")
+
 	v, ok := j.(map[string]interface{})
 	if ok {
 		cname, ok = v["value"].(string)
@@ -60,10 +62,6 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 }
 
 func GetSessionKey(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	var (
-		chID int
-	)
-
 	cleanup := setPrefix(logPrefixClient, "SESSION_KEY_REQ", g.Log)
 	defer cleanup()
 
@@ -76,14 +74,16 @@ func GetSessionKey(g *env.Global, w http.ResponseWriter, r *http.Request) except
 		return raiseServerError(errors.New("nil key in GetSessionKey (line 72)"))
 	}
 
-	chID = *j
-	// go into redis, and add a hash field for a session id
+	sid, err := session.MapToClient(*j, g.SessionKeyGenerator, g.Pool, g.Log)
+	if err != nil {
+		return raiseServerError(err)
+	}
 
 	json.NewEncoder(w).Encode(
 		struct {
 			Value int `json:"value"`
 		}{
-			Value: *j,
+			Value: *sid,
 		},
 	)
 

@@ -68,5 +68,5 @@ func marshallJSONString(j interface{}) (*string, error) {
 		return nil, errors.New("failed to parse json struct (line 67)")
 	}
 
-	return *s, nil
+	return &s, nil
 }

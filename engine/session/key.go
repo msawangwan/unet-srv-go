@@ -55,7 +55,7 @@ func (kgen *KeyGenerator) GenerateNextClientID() (*int, error) {
 		return nil, err
 	}
 
-	kgen.printKeyGenerater(n)
+	kgen.printGeneratedKey(n)
 
 	return &n, nil
 }
@@ -78,11 +78,11 @@ func (kgen *KeyGenerator) GenerateNextSessionKey() (*int, error) {
 		return nil, err
 	}
 
-	kgen.printKeyGenerater(n)
+	kgen.printGeneratedKey(n)
 
 	return &n, nil
 }
 
-func (kgen *KeyGenerator) printKeyGenerated(int k) {
+func (kgen *KeyGenerator) printGeneratedKey(k int) {
 	kgen.Printf("generated new [id: %d]", k)
 }
