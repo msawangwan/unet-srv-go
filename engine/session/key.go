@@ -7,12 +7,17 @@ import (
 
 // key
 const (
-	generatedKeys = "keys:generated"
+	keyIdGenerator = "key:generator"
 )
 
-// KeyGenerator generates the next available int key to be used as a session id
+// hash fields
+const (
+	currentClientHandleID   = "client_handlers:curr"
+	currentSessionHandleKey = "session_handlers:curr"
+)
+
+// KeyGenerator retrieves assignable keys from the redis store
 type KeyGenerator struct {
-	Next int
 	*pool.Pool
 	*debug.Log
 }
@@ -20,18 +25,19 @@ type KeyGenerator struct {
 // NewKeyGenerator is a factory function, reurns an instance of KeyGenerator
 func NewKeyGenerator(p *pool.Pool, l *debug.Log) (*KeyGenerator, error) {
 	kgen := &KeyGenerator{
-		Next: -1,
 		Pool: p,
 		Log:  l,
 	}
 
-	p.Cmd("SET", generatedKeys, kgen.Next) // TODO: do we care about this error
+	z := -1
+
+	p.Cmd("HMSET", keyIdGenerator, currentClientHandleID, z, currentSessionHandleKey, z)
 
 	return kgen, nil
 }
 
 // GenerateNext returns an int to be used as a key for a session handle
-func (kgen *KeyGenerator) GenerateNext() (*int, error) {
+func (kgen *KeyGenerator) GenerateNextClientID() (*int, error) {
 	conn, err := kgen.Get()
 	if err != nil {
 		return nil, err
@@ -42,15 +48,41 @@ func (kgen *KeyGenerator) GenerateNext() (*int, error) {
 		kgen.SetPrefixDefault()
 	}()
 
-	kgen.SetPrefix("[SESSION][KEY_GEN] ")
+	kgen.SetPrefix("[SESSION][KEY_GEN][CLIENT_HANDLE] ")
 
-	n, err := conn.Cmd("INCR", generatedKeys).Int()
+	n, err := conn.Cmd("HINCRBY", keyIdGenerator, currentClientHandleID, 1).Int()
 	if err != nil {
 		return nil, err
 	}
 
-	kgen.Next = n
-	kgen.Printf("generated new [id: %d]", kgen.Next)
+	kgen.printKeyGenerater(n)
 
 	return &n, nil
+}
+
+func (kgen *KeyGenerator) GenerateNextSessionKey() (*int, error) {
+	conn, err := kgen.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		kgen.Put(conn)
+		kgen.SetPrefixDefault()
+	}()
+
+	kgen.SetPrefix("[SESSION][KEY_GEN][SESSION_HANDLE] ")
+
+	n, err := conn.Cmd("HINCRBY", keyIdGenerator, currentSessionHandleKey, 1).Int()
+	if err != nil {
+		return nil, err
+	}
+
+	kgen.printKeyGenerater(n)
+
+	return &n, nil
+}
+
+func (kgen *KeyGenerator) printKeyGenerated(int k) {
+	kgen.Printf("generated new [id: %d]", k)
 }

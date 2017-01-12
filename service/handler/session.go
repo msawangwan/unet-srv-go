@@ -12,14 +12,6 @@ import (
 	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
-/*
- * - RegisterNewSession creates a client session key, it is sent back as json to
- *     the client and stored on the server in redis and in memory
- * - SetPlayerOwnerName assigns the players name to its associated session handle
- * - CheckGameNameAvailable checks if the game name is valid (for host)
- * - FetchAllActive gets the lobby list
- */
-
 const (
 	logPrefixSession = "SESSION"
 )
@@ -96,8 +88,8 @@ func SetPlayerOwnerName(g *env.Global, w http.ResponseWriter, r *http.Request) e
 }
 
 // CheckGameNameAvailable : POST session/host/name/availability
-func CheckGameNameAvailable(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	cleanup := setPrefix(logPrefixSession, "CHECK_HOST_NAME", g.Log)
+func VerifyName(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	cleanup := setPrefix(logPrefixSession, "VERIFY_NAME", g.Log)
 	defer cleanup()
 
 	var (
@@ -106,16 +98,23 @@ func CheckGameNameAvailable(g *env.Global, w http.ResponseWriter, r *http.Reques
 
 	j, err := parseJSON(r.Body)
 	if err != nil {
-		return raise(err, err.Error(), 500)
+		return raiseServerError(err)
 	}
 
-	k := j.(map[string]interface{})["value"].(string)
-
-	if err = la.CheckAvailability(k, g.Pool, g.Log); err != nil {
-		return raise(err, err.Error(), 500)
+	s, err := marshallJSONString(j)
+	if err != nil {
+		return raiseServerError(err)
 	}
 
-	json.NewEncoder(w).Encode(la)
+	g.Printf("CHECKING NAME AVAIL")
+
+	//k := j.(map[string]interface{})["value"].(string)
+
+	//if err = la.CheckAvailability(k, g.Pool, g.Log); err != nil {
+	//	return raise(err, err.Error(), 500)
+	//}
+
+	//json.NewEncoder(w).Encode(la)
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -50,4 +51,22 @@ func parseJSONInt(r io.Reader) (*int, error) {
 	n := j.(map[string]interface{})["value"].(json.Number)
 	val, _ := strconv.Atoi(string(n))
 	return &val, nil
+}
+
+func marshallJSONString(j interface{}) (*string, error) {
+	var (
+		s string
+	)
+
+	m, ok := j.(map[string]interface{})
+	if ok {
+		s, ok = m["value"].(string)
+		if !ok {
+			return nil, errors.New("failed to read json map (line 58)")
+		}
+	} else {
+		return nil, errors.New("failed to parse json struct (line 67)")
+	}
+
+	return *s, nil
 }
