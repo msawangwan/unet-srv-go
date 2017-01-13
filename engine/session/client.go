@@ -8,7 +8,7 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-// key prefixes to forge keys from
+// prefixes to forge keys from
 const (
 	phk_clientHandleByID = "client:handle"
 )

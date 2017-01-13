@@ -93,3 +93,7 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 
 	return nil
 }
+
+func RequestJoinKey(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	return nil
+}

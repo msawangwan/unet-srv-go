@@ -5,7 +5,24 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-// key
+// hash keys
+const (
+	hk_gameLobbyList = "game:name:id" // a map of gamename -> started (bool)
+)
+
+// set keys
+const (
+	sk_namesInUse = "game:name:in-use" // set of names that are already taken
+)
+
+// hash fields
+//const (
+//	hf_gameName   = "game_name"
+//	hf_gameid     = "game_id"
+//	hf_hasstarted = "has_game_started"
+//)
+
+// key DEPRECATED
 const (
 	keySessionLobbyList = "session:lobby:all"
 )
@@ -40,22 +57,37 @@ func (lobby *Lobby) PopulateLobbyList(p *pool.Pool, l *debug.Log) error {
 	return nil
 }
 
-// LobbyAvailability wraps a bool, might be unnecessary
-type LobbyAvailability struct {
-	IsAvailable bool `json:"isAvailable"`
+// CheckAvailability checks a given name against a list of all active simulations to check for uniqueness
+func IsGameNameUnique(name string, p *pool.Pool) (bool, error) {
+	res, err := p.Cmd("SISMEMBER", sk_namesInUse, name).Int()
+	if err != nil {
+		return false, err
+	} else if res == 1 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
-// CheckAvailability checks a given name against a list of all active simulations to check for uniqueness
-func (la *LobbyAvailability) CheckAvailability(name string, p *pool.Pool, l *debug.Log) error {
-	res, err := p.Cmd("SISMEMBER", keySessionLobbyList, name).Int()
+func PostGameToLobby(name string, p *pool.Pool) error {
+	conn, err := p.Get()
 	if err != nil {
 		return err
 	}
 
-	if res == 0 {
-		la.IsAvailable = true
-	} else {
-		la.IsAvailable = false
+	defer func() {
+		p.Put(conn)
+	}()
+
+	if err = conn.Cmd("MULTI").Err; err != nil {
+		return err
+	}
+
+	conn.Cmd("SADD", sk_namesInUse, name)
+	conn.Cmd("HMSET", hk_gameLobbyList, name, false)
+
+	if err = conn.Cmd("EXEC").Err; err != nil {
+		return err
 	}
 
 	return nil

@@ -46,7 +46,7 @@ func NewRouteTable(globals *env.Global) *Table {
 			"client/handle/join/key": &route{
 				Method:  "POST",
 				Pattern: cache("client/handle/join/key"),
-				Handler: resource.Context{globals, handler.SetPlayerOwnerName},
+				Handler: resource.Context{globals, handler.RequestJoinKey},
 			},
 			"session/handle/name/verification": &route{
 				Method:  "POST",
