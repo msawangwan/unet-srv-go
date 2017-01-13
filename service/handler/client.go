@@ -61,7 +61,9 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 	return nil
 }
 
-func GetSessionKey(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+// GetSessionKey : POST client/handle/host/key : return a session key used to
+// validate games and stuff
+func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	cleanup := setPrefix(logPrefixClient, "SESSION_KEY_REQ", g.Log)
 	defer cleanup()
 
@@ -73,6 +75,8 @@ func GetSessionKey(g *env.Global, w http.ResponseWriter, r *http.Request) except
 	} else if j == nil {
 		return raiseServerError(errors.New("nil key in GetSessionKey (line 72)"))
 	}
+
+	g.Printf("client [handle id: %d]", *j)
 
 	sid, err := session.MapToClient(*j, g.SessionKeyGenerator, g.Pool, g.Log)
 	if err != nil {

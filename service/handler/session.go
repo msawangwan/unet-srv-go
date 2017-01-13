@@ -17,6 +17,7 @@ const (
 )
 
 // RegisterNewSession :  GET session/register/key
+// DEPRECATE
 func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		skey *int
@@ -56,6 +57,7 @@ func RegisterNewSession(g *env.Global, w http.ResponseWriter, r *http.Request) e
 }
 
 // SetPlayerOwnerName : POST session/register/name
+// DEPRECATE
 func SetPlayerOwnerName(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	cleanup := setPrefix(logPrefixSession, "SET_NAME", g.Log)
 	defer cleanup()

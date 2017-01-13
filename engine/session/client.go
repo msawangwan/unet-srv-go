@@ -10,9 +10,7 @@ import (
 
 // key prefixes to forge keys from
 const (
-	hkp_clientHandle = "client:handle"
-	//kp_clientHandleByID    = "client:session:handle"     // maps an id to clients name
-	//kp_clientSessionHandle = "client:session:handle:key" // maps
+	phk_clientHandleByID = "client:handle"
 )
 
 // hash keys
@@ -26,9 +24,8 @@ const (
 	hf_attachedSessionHandleByID = "attached_session_handle_id"
 )
 
-// combine this one liner into the forge() func
-func makeKey(prefix, id string) string {
-	return fmt.Sprintf("%s:%s", prefix, id)
+func marshallIntPointer(np *int) string {
+	return strconv.Itoa(*np)
 }
 
 // wrapper to print the key we made
@@ -64,14 +61,15 @@ func RegisterClient(clientName string, kgen *KeyGenerator, conns *pool.Pool, log
 
 	log.SetPrefix("[SESSION][REGISTER_CLIENT] ")
 
-	key := forge(hkp_clientHandle, strconv.Itoa(*id), log) // format: [client:handle:id]
+	clientID := strconv.Itoa(*id)
+	key := forge(phk_clientHandleByID, clientID, log) // format: [client:handle:id]
 
 	if err = conn.Cmd("MULTI").Err; err != nil {
 		return nil, err
 	}
 
-	conn.Cmd("HSET", hk_allClientHandles, id, key)   // register id -> client:handle (stores the forged key for later retrival)
-	conn.Cmd("HSET", key, hf_clientName, clientName) // set a field that stores the current client:handles in-game name
+	conn.Cmd("HSET", hk_allClientHandles, clientID, key) // register id -> client:handle (stores the forged key for later retrival)
+	conn.Cmd("HSET", key, hf_clientName, clientName)     // set a field that stores the current client:handles in-game name
 
 	if err = conn.Cmd("EXEC").Err; err != nil {
 		return nil, err
@@ -96,31 +94,25 @@ func MapToClient(id int, kgen *KeyGenerator, conns *pool.Pool, log *debug.Log) (
 	}()
 
 	log.SetPrefix("[SESSION][MAP_SESSION_CLIENT] ")
-
-	log.Printf("querying redis store for client with [id : %d] ....", id)
-	log.Printf("mapping a new session to client [id: %d] ...", id)
+	log.Printf("querying redis store for client with [handle id : %d] ...", id)
 
 	sid, err := kgen.GenerateNextSessionKey()
 	if err != nil {
 		return nil, err
 	}
 
-	if err = conn.Cmd("MULTI").Err; err != nil {
-		return nil, err
-	}
+	log.Printf("mapping a new session to client [handle id: %d] ...", id)
 
-	ch, err := conn.Cmd("HGET", hk_allClientHandles, id).Str()
+	clientID := strconv.Itoa(id)
+	ch, err := conn.Cmd("HGET", hk_allClientHandles, clientID).Str()
 	if err != nil {
 		return nil, err
 	}
 
-	conn.Cmd("HSET", ch, hf_attachedSessionHandleByID, sid)
+	sessionID := strconv.Itoa(*sid)
+	conn.Cmd("HSET", ch, hf_attachedSessionHandleByID, sessionID)
 
-	if err = conn.Cmd("EXEC").Err; err != nil {
-		return nil, err
-	}
-
-	log.Printf("mapped session [key: %d] to client [id: %d key: %s]", sid, id, ch)
+	log.Printf("mapped session [key: %d] to client [id: %d key: %s]", *sid, id, ch)
 
 	return sid, nil
 }

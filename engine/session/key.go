@@ -7,13 +7,13 @@ import (
 
 // key
 const (
-	keyIdGenerator = "key:generator"
+	hk_generatedIDs = "keys:generated"
 )
 
 // hash fields
 const (
-	currentClientHandleID   = "client_handlers:curr"
-	currentSessionHandleKey = "session_handlers:curr"
+	hf_clientHandleID   = "client_handle_current_key"
+	hf_sessionHandleKey = "session_handle_current_key"
 )
 
 // KeyGenerator retrieves assignable keys from the redis store
@@ -31,26 +31,20 @@ func NewKeyGenerator(p *pool.Pool, l *debug.Log) (*KeyGenerator, error) {
 
 	z := -1
 
-	p.Cmd("HMSET", keyIdGenerator, currentClientHandleID, z, currentSessionHandleKey, z)
+	p.Cmd("HMSET", hk_generatedIDs, hf_clientHandleID, z, hf_sessionHandleKey, z)
 
 	return kgen, nil
 }
 
 // GenerateNext returns an int to be used as a key for a session handle
 func (kgen *KeyGenerator) GenerateNextClientID() (*int, error) {
-	conn, err := kgen.Get()
-	if err != nil {
-		return nil, err
-	}
-
 	defer func() {
-		kgen.Put(conn)
 		kgen.SetPrefixDefault()
 	}()
 
 	kgen.SetPrefix("[SESSION][KEY_GEN][CLIENT_HANDLE] ")
 
-	n, err := conn.Cmd("HINCRBY", keyIdGenerator, currentClientHandleID, 1).Int()
+	n, err := kgen.Cmd("HINCRBY", hk_generatedIDs, hf_clientHandleID, 1).Int()
 	if err != nil {
 		return nil, err
 	}
@@ -61,19 +55,13 @@ func (kgen *KeyGenerator) GenerateNextClientID() (*int, error) {
 }
 
 func (kgen *KeyGenerator) GenerateNextSessionKey() (*int, error) {
-	conn, err := kgen.Get()
-	if err != nil {
-		return nil, err
-	}
-
 	defer func() {
-		kgen.Put(conn)
 		kgen.SetPrefixDefault()
 	}()
 
 	kgen.SetPrefix("[SESSION][KEY_GEN][SESSION_HANDLE] ")
 
-	n, err := conn.Cmd("HINCRBY", keyIdGenerator, currentSessionHandleKey, 1).Int()
+	n, err := kgen.Cmd("HINCRBY", hk_generatedIDs, hf_sessionHandleKey, 1).Int()
 	if err != nil {
 		return nil, err
 	}

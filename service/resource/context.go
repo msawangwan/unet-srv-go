@@ -30,7 +30,7 @@ func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.SetLevelDefault()
 	}()
 
-	c.Printf("route requested: %s", r.URL.Path)
+	c.Printf("calling handler function mapped to: %s", r.URL.Path)
 
 	if e := c.Handle(c.Global, w, r); e != nil {
 		c.SetPrefix("[RESOURCE][ERROR] ")
