@@ -268,13 +268,3 @@ func (s *Simulation) sendErr(err error) {
 func makeKey(prefix, id string) string {
 	return fmt.Sprintf("%s:%s", prefix, id)
 }
-
-// GenerateSeed returns a new simulation game world seed
-func GenerateSeed() int64 {
-	return time.Now().UTC().UnixNano()
-}
-
-// GenerateSeedDebug returns the same world seed every time, for debug only
-func GenerateSeedDebug() int64 {
-	return 1482284596187742126
-}

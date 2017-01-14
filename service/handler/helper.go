@@ -2,25 +2,16 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"strconv"
 
 	"encoding/json"
 
-	"github.com/msawangwan/unet-srv-go/debug"
 	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
 func raiseServerError(err error) exception.Handler {
 	return raise(err, err.Error(), 500)
-}
-
-func setPrefix(prefix string, specific string, l *debug.Log) func() {
-	l.SetPrefix(fmt.Sprintf("[HTTP][HANDLER][%s][%s] ", prefix, specific))
-	return func() {
-		l.SetPrefixDefault()
-	}
 }
 
 func parseJSON(r io.Reader) (interface{}, error) {

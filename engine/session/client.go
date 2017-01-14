@@ -112,7 +112,11 @@ func MapToClient(id int, kgen *KeyGenerator, conns *pool.Pool, log *debug.Log) (
 	sessionID := strconv.Itoa(*sid)
 	conn.Cmd("HSET", ch, hf_attachedSessionHandleByID, sessionID)
 
-	log.Printf("mapped session [key: %d] to client [id: %d key: %s]", *sid, id, ch)
+	if *sid == id {
+		log.Printf("mapped session [key: %d] to client [id: %d key: %s]", *sid, id, ch)
+	} else {
+		log.Printf("generated session [key: %d] but client already has a key [id: %d key: %s]", *sid, id, ch)
+	}
 
 	return sid, nil
 }

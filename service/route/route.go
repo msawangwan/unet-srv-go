@@ -53,6 +53,11 @@ func NewRouteTable(globals *env.Global) *Table {
 				Pattern: cache("session/handle/name/verification"),
 				Handler: resource.Context{globals, handler.VerifyName},
 			},
+			"session/handle/game/load": &route{
+				Method:  "POST",
+				Pattern: cache("session/handle/game/load"),
+				Handler: resource.Context{globals, nil},
+			},
 		},
 	}
 

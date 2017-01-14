@@ -58,7 +58,7 @@ func main() {
 		log.Fatal("error setting up logger")
 	}
 
-	logger.SetPrefix("[MAIN][INIT] ")
+	logger.PrefixSetWidth(10, "MAIN", "INIT")
 
 	var (
 		redis   *db.RedisHandle
@@ -102,13 +102,25 @@ func main() {
 	logger.Printf("debug logger ready ...\n")
 	logger.Printf("redis handle ready ...\n")
 	logger.Printf("postgre handle ready ...\n")
-
 	logger.Printf("init done ...\n")
-	logger.Printf("all systems go ...\n")
+
+	motd(logger)
 
 	logger.Printf("service listening and serving on %s ...\n", conf.ListenAddress)
 
-	logger.SetPrefixDefault()
+	logger.PrefixReset()
 
 	logger.Fatal(http.ListenAndServe(conf.ListenAddress, gateway.NewMultiplexer(environment, nil)))
+}
+
+// TODO: work on this
+func motd(l *debug.Log) {
+	cf := &debug.ConsoleFormatter{}
+	l.Printf(cf.Put("... ****"))
+	l.Printf(cf.Put("... **WELCOME**"))
+	l.Printf(cf.Put("... ****"))
+	l.Printf(cf.Put("... **SYSTEM SPOOLED UP**"))
+	l.Printf(cf.Put("... ****"))
+	l.Printf(cf.Put("... **SYSTEM ONLINE**"))
+	l.Printf(cf.Put("... ****"))
 }

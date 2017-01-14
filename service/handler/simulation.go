@@ -14,8 +14,8 @@ import (
 
 // HostAndAttachNewSimulation : POST session/host/simulation
 func HostAndAttachNewSimulation(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	cleanup := setPrefix(logPrefixSession, "HOST_NEW", g.Log)
-	defer cleanup()
+	g.Prefix("sim")
+	defer g.PrefixReset()
 
 	j, err := parseJSON(r.Body)
 	if err != nil {
@@ -55,10 +55,10 @@ func HostAndAttachNewSimulation(g *env.Global, w http.ResponseWriter, r *http.Re
 
 // AttachSimulation is like joining
 func AttachSimulation(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	cleanup := setPrefix(logPrefixSession, "ATTACH", g.Log)
-	defer cleanup()
-
+	g.Prefix("sim")
+	defer g.PrefixReset()
 	j, err := parseJSON(r.Body)
+
 	if err != nil {
 		return raise(err, err.Error(), 500)
 	}

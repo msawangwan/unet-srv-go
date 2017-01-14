@@ -10,9 +10,6 @@ import (
 	"github.com/msawangwan/unet-srv-go/engine/game"
 )
 
-// key format;
-// [category]:[label]:[info]:
-
 // key
 const (
 	kSessionHandle = "session:handle"

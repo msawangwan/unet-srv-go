@@ -45,9 +45,11 @@ func (uh *UpdateHandler) Run() {
 	for {
 		select {
 		case err := <-uh.Error:
-			uh.SetPrefix("[UPDATE][HANDLE][MAIN][ERROR] ")
+			//uh.SetPrefix("[UPDATE][HANDLE][MAIN][ERROR] ")
+			uh.Prefix("UPDATE ENGINE")
 			uh.Printf("%s\n", err.Error())
-			uh.SetPrefixDefault()
+			uh.PrefixReset()
+			//uh.SetPrefixDefault()
 		}
 	}
 }
@@ -70,7 +72,6 @@ func (uh *UpdateHandler) Monitor() {
 
 			signal.Stop(uh.kill)
 			uh.Error <- errTerminatedByAdmin
-			// close(uh.Error) // TODO: this is not a good idea, as others may try to write to this chan
 
 			return
 		default:

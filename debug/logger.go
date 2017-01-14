@@ -1,11 +1,15 @@
 package debug
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 )
 
+// deprecate these
 const (
 	PREFIX_DEBUG = "[DEBUG] "
 
@@ -54,10 +58,47 @@ func NewLogger(filename string) (*Log, error) {
 	}
 }
 
+const (
+	color_reset = "\033[39m"
+	color_red   = "\033[31m"
+	color_green = "\033[32m"
+)
+
+const (
+	colw = 20 // TODO: default column width, from config
+)
+
+var (
+	consoleStyle = setStyleWidth(colw)
+)
+
+func (l *Log) Prefix(p ...string) {
+	var (
+		ps string
+	)
+
+	for _, pf := range p {
+		ps = ps + "|" + strings.ToUpper(pf) + "|"
+	}
+
+	l.SetPrefix(fmt.Sprintf(consoleStyle, color_red, ps, color_reset))
+}
+
+func (l *Log) PrefixSetWidth(w int, p ...string) {
+	consoleStyle = setStyleWidth(w)
+	l.Prefix(p...)
+}
+
+func (l *Log) PrefixReset() {
+	l.SetPrefix(fmt.Sprintf(consoleStyle, color_reset, "DEBUG", color_reset))
+}
+
+// DEPRECATE
 func (l *Log) SetPrefixDefault() {
 	l.SetPrefix(PREFIX_DEBUG)
 }
 
+// DEPRECATE
 func (l *Log) SetPrefixInit() {
 	l.SetPrefix(PREFIX_INIT)
 }
@@ -72,4 +113,8 @@ func (l *Log) SetLevelDebug() {
 
 func (l *Log) SetLevelVerbose() {
 	l.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+}
+
+func setStyleWidth(w int) string {
+	return "%s%-" + strconv.Itoa(w) + "s%s "
 }

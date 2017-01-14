@@ -5,15 +5,21 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-// key
+// key format
+// [category]:[label]:[info]
+
+// hash key
 const (
-	hk_generatedIDs = "keys:generated"
+	// key db
+	hk_idDispenser = "keys:generated"
 )
 
 // hash fields
 const (
+	// key db fields
 	hf_clientHandleID   = "client_handle_current_key"
 	hf_sessionHandleKey = "session_handle_current_key"
+	hf_gameHandleID     = "game_handle_current_key"
 )
 
 // KeyGenerator retrieves assignable keys from the redis store
@@ -31,20 +37,17 @@ func NewKeyGenerator(p *pool.Pool, l *debug.Log) (*KeyGenerator, error) {
 
 	z := -1
 
-	p.Cmd("HMSET", hk_generatedIDs, hf_clientHandleID, z, hf_sessionHandleKey, z)
+	p.Cmd("HMSET", hk_idDispenser, hf_clientHandleID, z, hf_sessionHandleKey, z, hf_gameHandleID, z)
 
 	return kgen, nil
 }
 
 // GenerateNext returns an int to be used as a key for a session handle
 func (kgen *KeyGenerator) GenerateNextClientID() (*int, error) {
-	defer func() {
-		kgen.SetPrefixDefault()
-	}()
+	kgen.Prefix("session", "keygen", "clientid")
+	defer kgen.PrefixReset()
 
-	kgen.SetPrefix("[SESSION][KEY_GEN][CLIENT_HANDLE] ")
-
-	n, err := kgen.Cmd("HINCRBY", hk_generatedIDs, hf_clientHandleID, 1).Int()
+	n, err := kgen.Cmd("HINCRBY", hk_idDispenser, hf_clientHandleID, 1).Int()
 	if err != nil {
 		return nil, err
 	}
@@ -55,13 +58,24 @@ func (kgen *KeyGenerator) GenerateNextClientID() (*int, error) {
 }
 
 func (kgen *KeyGenerator) GenerateNextSessionKey() (*int, error) {
-	defer func() {
-		kgen.SetPrefixDefault()
-	}()
+	kgen.Prefix("session", "keygen", "sessionkey")
+	defer kgen.PrefixReset()
 
-	kgen.SetPrefix("[SESSION][KEY_GEN][SESSION_HANDLE] ")
+	n, err := kgen.Cmd("HINCRBY", hk_idDispenser, hf_sessionHandleKey, 1).Int()
+	if err != nil {
+		return nil, err
+	}
 
-	n, err := kgen.Cmd("HINCRBY", hk_generatedIDs, hf_sessionHandleKey, 1).Int()
+	kgen.printGeneratedKey(n)
+
+	return &n, nil
+}
+
+func (kgen *KeyGenerator) GenerateNextGameID() (*int, error) {
+	kgen.Prefix("game", "keygen", "gameid")
+	defer kgen.PrefixReset()
+
+	n, err := kgen.Cmd("HINCRBY", hk_idDispenser, hf_gameHandleID, 1).Int()
 	if err != nil {
 		return nil, err
 	}

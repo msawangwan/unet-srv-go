@@ -11,15 +11,11 @@ import (
 	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
-const (
-	logPrefixClient = "CLIENT"
-)
-
 var (
 	ErrFailedToRegisterClientHandle = errors.New("failed to register client handle")
 )
 
-// RegisterClientHandle : POST client/handle/register : registers a new client
+// RegisterClientHandle : POST client/handle/register : registers a new client handler
 func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		cname string
@@ -30,8 +26,8 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 		return raiseServerError(err)
 	}
 
-	cleanup := setPrefix(logPrefixClient, "REGISTER_CLIENT_HANDLE", g.Log)
-	defer cleanup()
+	g.Prefix("handler", "client", "register")
+	defer g.PrefixReset()
 
 	g.Printf("register new client handle")
 
@@ -61,11 +57,10 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 	return nil
 }
 
-// GetSessionKey : POST client/handle/host/key : return a session key used to
-// validate games and stuff
+// GetSessionKey : POST client/handle/host/key : return a session key for hosting
 func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	cleanup := setPrefix(logPrefixClient, "SESSION_KEY_REQ", g.Log)
-	defer cleanup()
+	g.Prefix("handler", "client", "reqhostkey")
+	defer g.PrefixReset()
 
 	g.Printf("new session key has been requested")
 
@@ -76,7 +71,7 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 		return raiseServerError(errors.New("nil key in GetSessionKey (line 72)"))
 	}
 
-	g.Printf("client [handle id: %d]", *j)
+	g.Printf("client [handle id: %d]", *j) // TODO: generate key rather than passing into func??
 
 	sid, err := session.MapToClient(*j, g.SessionKeyGenerator, g.Pool, g.Log)
 	if err != nil {
