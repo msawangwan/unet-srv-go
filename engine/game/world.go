@@ -62,3 +62,31 @@ func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *p
 
 	return nil
 }
+
+func GetSeed(gamekey int, p *pool.Pool, l *debug.Log) (*int64, error) {
+	conn, err := p.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		p.Put(conn)
+	}()
+
+	gamestring, err := conn.Cmd("HGET", hk_gameHandleKey, strconv.Itoa(gamekey)).Str()
+	if err != nil {
+		return nil, err
+	}
+
+	seedstring, err := conn.Cmd("HGET", gamestring, hf_seed).Str()
+	if err != nil {
+		return nil, err
+	}
+
+	seed, err := strconv.ParseInt(seedstring, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	return &seed, nil
+}

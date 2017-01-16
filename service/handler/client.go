@@ -93,6 +93,9 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 
 		g.Prefix("handler", "client", "reqhostkey")
 		g.Printf("mapped session [key: %d] to client [handle id: %d]", sessionHostKey, chid)
+	} else {
+		g.Prefix("handler", "client", "reqhostkey")
+		g.Printf("client already has a key, ignored request")
 	}
 
 	json.NewEncoder(w).Encode(
