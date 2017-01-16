@@ -133,8 +133,5 @@ func LoadGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) exce
 		},
 	)
 
-	// once loaded, a player can then join
-	// only a host can load (ie, call this endpoint/function)
-
 	return nil
 }

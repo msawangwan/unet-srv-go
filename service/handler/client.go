@@ -84,7 +84,7 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 			return raiseServerError(err)
 		}
 
-		sessionHostKey := *k
+		sessionHostKey = *k
 
 		err = session.MapToClient(chid, sessionHostKey, g.Pool, g.Log)
 		if err != nil {
@@ -92,7 +92,7 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 		}
 
 		g.Prefix("handler", "client", "reqhostkey")
-		g.Printf("mapped session [key: %d] to client [handle id: %d", sessionHostKey, chid)
+		g.Printf("mapped session [key: %d] to client [handle id: %d]", sessionHostKey, chid)
 	}
 
 	json.NewEncoder(w).Encode(

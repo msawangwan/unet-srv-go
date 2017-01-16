@@ -75,13 +75,19 @@ func RegisterClient(clientName string, clientID int, conns *pool.Pool, log *debu
 func IsMapped(chid int, conns *pool.Pool, log *debug.Log) (bool, error) {
 	ch := strconv.Itoa(chid)
 
-	chkey := conns.Cmd("HGET", hk_allClientHandles, ch)
+	defer log.PrefixReset()
+	log.Prefix("client", "ismapped")
+	log.Printf("checking if client has already been mapped to a request")
+
+	chkey := conns.Cmd("HGET", "client:handle:"+ch, "attached_session_handle_id")
 	if chkey.Err != nil {
 		return false, chkey.Err
 	} else if chkey.IsType(redis.Nil) {
+		log.Printf("client has no session mapped [client id: %d]", chid)
 		return false, nil
 	}
 
+	log.Printf("client already mapped [client id: %d]", chid)
 	return true, nil
 }
 
