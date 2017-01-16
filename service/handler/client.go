@@ -34,15 +34,6 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 	}
 
 	cname := *s
-	//v, ok := j.(map[string]interface{})
-	//if ok {
-	//		cname, ok = v["value"].(string)
-	//		if !ok {
-	//			return raiseServerError(ErrFailedToRegisterClientHandle)
-	//		}
-	//	} else {
-	//		return raiseServerError(ErrFailedToRegisterClientHandle)
-	//	}
 
 	k, err := g.KeyManager.GenerateNextClientID()
 	if err != nil {
@@ -80,7 +71,7 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 
 	defer g.PrefixReset()
 	g.Prefix("handler", "client", "reqhostkey")
-	g.Printf("session key has been requested by [clienthandle id: %d]", chid)
+	g.Printf("session key has been requested by client [handle id: %d]", chid)
 
 	var sessionHostKey int = -1
 
@@ -88,9 +79,6 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 	if err != nil {
 		return raiseServerError(err)
 	} else if !mapped && err == nil {
-
-		//g.Printf("client [handle id: %d]", *j)
-
 		k, err := g.KeyManager.GenerateNextSessionKey()
 		if err != nil {
 			return raiseServerError(err)
@@ -102,6 +90,9 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 		if err != nil {
 			return raiseServerError(err)
 		}
+
+		g.Prefix("handler", "client", "reqhostkey")
+		g.Printf("mapped session [key: %d] to client [handle id: %d", sessionHostKey, chid)
 	}
 
 	json.NewEncoder(w).Encode(
