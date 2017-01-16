@@ -3,14 +3,15 @@ package handler
 import (
 	"errors"
 
-	"encoding/json"
+	//"encoding/json"
 	"net/http"
 
-	//"github.com/msawangwan/unet-srv-go/engine/session"
+	"github.com/msawangwan/unet-srv-go/engine/game"
 	"github.com/msawangwan/unet-srv-go/env"
 	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
+// Loadworld : POST game/load/world
 func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		gameKey int
@@ -25,13 +26,22 @@ func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.
 
 	gameKey = *j
 
+	err = game.LoadWorld(
+		gameKey,
+		g.WorldNodeCount,
+		g.WorldScale,
+		g.NodeRadius,
+		g.MaximumAttemptsWhenSpawningNodes,
+		g.Pool,
+		g.Log,
+	)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
 	defer g.PrefixReset()
 	g.Prefix("handler", "game", "loadworld")
-	g.Printf("loading game world [gamekey: %d]", gameKey)
-
-	json.NewEncoder(w).Encode(
-		struct{}{},
-	)
+	g.Printf("loaded game world [gamekey: %d]", gameKey)
 
 	return nil
 }

@@ -40,7 +40,7 @@ func TestSubdividerImplementation(t *testing.T) {
 
 	qt := New(numNodes, nodeRadius, testSeed)
 
-	qt.Partition(scale)
+	qt.Partition(scale, 20)
 
 	for i, n := range qt.Nodes {
 		if n.attached {

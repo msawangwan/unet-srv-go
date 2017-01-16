@@ -124,6 +124,7 @@ func (n *node) tryInsert(other *node) {
 }
 
 func (n *node) Position() (float32, float32) { return n.x, n.y }
+func (n *node) IsAttachedToTree() bool       { return n.attached }
 
 func (n *node) String() string {
 	return fmt.Sprintf("quadrant node: [%s] id: [%d] depth: [%d] label: [%s]", n.point, n.id, n.depth, n.label)
@@ -170,8 +171,8 @@ func New(nodeCount int, nodeRadius float32, seed int64) *Tree {
 	}
 }
 
-func (t *Tree) Partition(scale float32) {
-	const amax = 20 // TODO: how to sync this const with the client?
+func (t *Tree) Partition(scale float32, amax int) {
+	//const amax = 20 // TODO: how to sync this const with the client?
 
 	var (
 		created    map[id]bool = make(map[id]bool)

@@ -20,11 +20,7 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	//	SessionHandleManager *session.HandleManager
-	//	SessionKeyGenerator  *session.KeyGenerator
 	KeyManager *manager.KeyGenerator
-
-	//GameSimulationTable *game.SimulationTable
 
 	GlobalError chan error
 
@@ -36,20 +32,14 @@ type Global struct {
 func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
 	checkErr := func(err error, log *debug.Log) {
 		if err != nil {
-			defer log.SetPrefixDefault()
-			log.SetPrefix("[INIT][ERROR] ")
+			defer log.PrefixReset()
+			log.Prefix("init", "error")
 			log.Fatalf("%s\n", err)
 		}
 	}
 
-	//	hmanager, err := session.NewHandleManager(100, redis.Pool, log) // TODO: get max capactiy from conf
-	//	checkErr(err, log)
-
 	kgen, err := manager.NewKeyGenerator(redis.Pool, log)
 	checkErr(err, log)
-
-	//gsimtable, err := game.NewSimulationTable(100, redis.Pool, log)
-	//checkErr(err, log)
 
 	g := &Global{
 		GameParameters: param,
@@ -57,10 +47,7 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 		PostgreHandle:  pg,
 		Log:            log,
 
-		//		SessionHandleManager: hmanager,
 		KeyManager: kgen,
-
-		//	GameSimulationTable: gsimtable,
 
 		GlobalError: errc,
 	}

@@ -112,7 +112,7 @@ func LoadGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) exce
 
 	gid = *gk
 
-	err = game.LoadNew(gname, gid, g.Pool, g.Log)
+	err = game.CreateNewHandler(gname, gid, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
 	}

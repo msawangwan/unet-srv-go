@@ -45,11 +45,9 @@ func (uh *UpdateHandler) Run() {
 	for {
 		select {
 		case err := <-uh.Error:
-			//uh.SetPrefix("[UPDATE][HANDLE][MAIN][ERROR] ")
-			uh.Prefix("UPDATE ENGINE")
+			uh.Prefix("update", "run")
 			uh.Printf("%s\n", err.Error())
 			uh.PrefixReset()
-			//uh.SetPrefixDefault()
 		}
 	}
 }
@@ -66,9 +64,9 @@ func (uh *UpdateHandler) Monitor() {
 	for {
 		select {
 		case <-uh.kill:
-			uh.SetPrefix("[UPDATE][HANDLE][MONITOR] ")
+			uh.Prefix("update", "monitor")
 			uh.Printf("terminated, running cleanup (use ctrl+c to exit) ...\n")
-			uh.SetPrefixDefault()
+			uh.PrefixReset()
 
 			signal.Stop(uh.kill)
 			uh.Error <- errTerminatedByAdmin
@@ -80,9 +78,9 @@ func (uh *UpdateHandler) Monitor() {
 			active = runtime.NumGoroutine()
 			avail = uh.Avail()
 
-			uh.SetPrefix("[UPDATE][HANDLE][MONITOR] ")
+			uh.Prefix("update", "monitor")
 			uh.Printf("goroutine count: [%d] available redis conns [%d]\n", active, avail)
-			uh.SetPrefixDefault()
+			uh.PrefixReset()
 		}
 	}
 }

@@ -38,15 +38,33 @@ func NewGameHandle(id int) *GameHandle {
 	}
 }
 
-// LoadNew loads a new game given a clientID
-func LoadNew(gamename string, id int, p *pool.Pool, l *debug.Log) error {
+// LoadNew loads a new game given a gamename and gameid
+func CreateNewHandler(gamename string, id int, p *pool.Pool, l *debug.Log) error {
+
 	v := fmt.Sprintf("%s:%s", phk_gameHandleSimulation, gamename)
 
-	l.Prefix("game", "loadnew")
-	l.PrefixReset()
-	l.Printf("loading a new game [gamename: %s][lookup key: %s] ...", gamename, v)
+	conn, err := p.Get()
+	if err != nil {
+		return err
+	}
 
-	p.Cmd("HMSET", hk_gameHandleKey, strconv.Itoa(id), v)
+	defer func() {
+		p.Put(conn)
+		l.PrefixReset()
+	}()
+
+	l.Prefix("game", "createnewhandler")
+
+	seed := GenerateSeedDebug()
+	// seed := GenerateSeed()
+	seedstring := strconv.FormatInt(seed, 10)
+	idstring := strconv.Itoa(id)
+
+	l.Printf("loading a new game [gamename: %s][lookup key: %s] ...", gamename, v)
+	l.Printf("seed [%s]", seedstring)
+
+	conn.Cmd("HSET", hk_gameHandleKey, idstring, v)
+	conn.Cmd("HMSET", v, hf_gameKey, idstring, hf_seed, seedstring)
 
 	return nil
 }
