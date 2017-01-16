@@ -5,6 +5,8 @@ import (
 	"strconv"
 
 	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/mediocregopher/radix.v2/redis"
+
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
@@ -39,84 +41,100 @@ func forge(prefix string, val string, l *debug.Log) string {
 type ClientHandle struct{}
 
 // RegisterClient returns an id mapped to the passed in client (player) name, this id is used to uniquely identify the client on future requests
-func RegisterClient(clientName string, kgen *KeyGenerator, conns *pool.Pool, log *debug.Log) (*int, error) {
-	var (
-		id *int
-	)
+func RegisterClient(clientName string, clientID int, conns *pool.Pool, log *debug.Log) error {
+	//	var (
+	//		id *int
+	//	)
 
-	id, err := kgen.GenerateNextClientID()
-	if err != nil {
-		return nil, err
-	}
+	//id, err := kgen.GenerateNextClientID()
+	//	if err != nil {
+	//		return nil, err
+	//	}
 
 	conn, err := conns.Get()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer func() {
 		conns.Put(conn)
-		log.SetPrefixDefault()
+		//log.SetPrefixDefault()
+		log.PrefixReset()
 	}()
 
-	log.SetPrefix("[SESSION][REGISTER_CLIENT] ")
+	//log.SetPrefix("[SESSION][REGISTER_CLIENT] ")
 
-	clientID := strconv.Itoa(*id)
-	key := forge(phk_clientHandleByID, clientID, log) // format: [client:handle:id]
+	//clientID := strconv.Itoa(*id)
+	cid := strconv.Itoa(clientID)
+	key := forge(phk_clientHandleByID, cid, log) // format: [client:handle:id]
 
 	if err = conn.Cmd("MULTI").Err; err != nil {
-		return nil, err
+		return err
 	}
 
-	conn.Cmd("HSET", hk_allClientHandles, clientID, key) // register id -> client:handle (stores the forged key for later retrival)
-	conn.Cmd("HSET", key, hf_clientName, clientName)     // set a field that stores the current client:handles in-game name
+	conn.Cmd("HSET", hk_allClientHandles, cid, key)  // register id -> client:handle (stores the forged key for later retrival)
+	conn.Cmd("HSET", key, hf_clientName, clientName) // set a field that stores the current client:handles in-game name
 
 	if err = conn.Cmd("EXEC").Err; err != nil {
-		return nil, err
+		return err
 	}
 
-	log.Printf("registered [client name: %s] [client handler id: %d]", clientName, *id)
+	log.Prefix("session", "registerclient")
+	log.Printf("registered [client name: %s] [client handler id: %d]", clientName, clientID)
 
-	return id, nil
+	//return id, nil
+	return nil
+}
+
+func IsMapped(chid int, conns *pool.Pool, log *debug.Log) (bool, error) {
+	ch := strconv.Itoa(chid)
+
+	chkey := conns.Cmd("HGET", hk_allClientHandles, ch)
+	if chkey.Err != nil {
+		return false, chkey.Err
+		//return false, errors.New("error checking client/session mapping redis")
+	} else if chkey.IsType(redis.Nil) {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // MapToClient maps a session handle to a client in the redis store, then
 // returns the newly generated session handle id
-func MapToClient(id int, kgen *KeyGenerator, conns *pool.Pool, log *debug.Log) (*int, error) {
+func MapToClient(chid int, sid int, conns *pool.Pool, log *debug.Log) error {
 	conn, err := conns.Get()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	defer func() {
 		conns.Put(conn)
-		log.SetPrefixDefault()
+		//	log.SetPrefixDefault()
+		log.PrefixReset()
 	}()
 
-	log.SetPrefix("[SESSION][MAP_SESSION_CLIENT] ")
-	log.Printf("querying redis store for client with [handle id : %d] ...", id)
+	//log.SetPrefix("[SESSION][MAP_SESSION_CLIENT] ")
+	//log.Printf("querying redis store for client with [handle id : %d] ...", id)
 
-	sid, err := kgen.GenerateNextSessionKey()
-	if err != nil {
-		return nil, err
-	}
+	//sid, err := kgen.GenerateNextSessionKey()
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	log.Printf("mapping a new session to client [handle id: %d] ...", id)
+	//log.Printf("mapping a new session [session key: %d] to client [handle id: %d] ...", sid, chid)
 
-	clientID := strconv.Itoa(id)
+	clientID := strconv.Itoa(chid)
 	ch, err := conn.Cmd("HGET", hk_allClientHandles, clientID).Str()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	sessionID := strconv.Itoa(*sid)
+	sessionID := strconv.Itoa(sid)
 	conn.Cmd("HSET", ch, hf_attachedSessionHandleByID, sessionID)
 
-	if *sid == id {
-		log.Printf("mapped session [key: %d] to client [id: %d key: %s]", *sid, id, ch)
-	} else {
-		log.Printf("generated session [key: %d] but client already has a key [id: %d key: %s]", *sid, id, ch)
-	}
+	log.Prefix("session", "mapclient")
+	log.Printf("mapped session [key: %d] to client [id: %d][handler key: %s]", sid, chid, ch)
 
-	return sid, nil
+	return nil
 }

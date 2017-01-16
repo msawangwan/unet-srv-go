@@ -56,7 +56,12 @@ func NewRouteTable(globals *env.Global) *Table {
 			"session/handle/game/load": &route{
 				Method:  "POST",
 				Pattern: cache("session/handle/game/load"),
-				Handler: resource.Context{globals, nil},
+				Handler: resource.Context{globals, handler.LoadGameHandler},
+			},
+			"game/load/world": &route{
+				Method:  "POST",
+				Pattern: cache("game/load/world"),
+				Handler: resource.Context{globals, handler.LoadWorld},
 			},
 		},
 	}

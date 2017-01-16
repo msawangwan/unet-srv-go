@@ -15,18 +15,6 @@ const (
 	sk_namesInUse = "game:name:in-use" // set of names that are already taken
 )
 
-// hash fields
-//const (
-//	hf_gameName   = "game_name"
-//	hf_gameid     = "game_id"
-//	hf_hasstarted = "has_game_started"
-//)
-
-// key DEPRECATED
-const (
-	keySessionLobbyList = "session:lobby:all"
-)
-
 // Lobby represents a list of attached (to session handles) simulations
 type Lobby struct {
 	Listing []string `json:"listing"`
@@ -41,7 +29,7 @@ func (lobby *Lobby) PopulateLobbyList(p *pool.Pool, l *debug.Log) error {
 	l.SetPrefix("[LOBBY][INFO] ")
 	l.Printf("fetching lobby list ...\n")
 
-	r := p.Cmd("SMEMBERS", keySessionLobbyList)
+	r := p.Cmd("SMEMBERS", sk_namesInUse) // TODO: this hasn't been fixed
 	if r.Err != nil {
 		return r.Err
 	}
@@ -69,6 +57,7 @@ func IsGameNameUnique(name string, p *pool.Pool) (bool, error) {
 	return true, nil
 }
 
+// PostGameToLobby adds the game name to a set of names
 func PostGameToLobby(name string, p *pool.Pool) error {
 	conn, err := p.Get()
 	if err != nil {

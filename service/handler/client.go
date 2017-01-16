@@ -17,31 +17,41 @@ var (
 
 // RegisterClientHandle : POST client/handle/register : registers a new client handler
 func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	var (
-		cname string
-	)
-
 	j, err := parseJSON(r.Body)
 	if err != nil {
 		return raiseServerError(err)
 	}
 
-	g.Prefix("handler", "client", "register")
 	defer g.PrefixReset()
-
+	g.Prefix("handler", "client", "register")
 	g.Printf("register new client handle")
 
-	v, ok := j.(map[string]interface{})
-	if ok {
-		cname, ok = v["value"].(string)
-		if !ok {
-			return raiseServerError(ErrFailedToRegisterClientHandle)
-		}
-	} else {
-		return raiseServerError(ErrFailedToRegisterClientHandle)
+	s, err := marshallJSONString(j)
+	if err != nil {
+		return raiseServerError(err)
+	} else if s == nil {
+		return raiseServerError(errors.New("nil string error"))
 	}
 
-	chid, err := session.RegisterClient(cname, g.SessionKeyGenerator, g.Pool, g.Log)
+	cname := *s
+	//v, ok := j.(map[string]interface{})
+	//if ok {
+	//		cname, ok = v["value"].(string)
+	//		if !ok {
+	//			return raiseServerError(ErrFailedToRegisterClientHandle)
+	//		}
+	//	} else {
+	//		return raiseServerError(ErrFailedToRegisterClientHandle)
+	//	}
+
+	k, err := g.KeyManager.GenerateNextClientID()
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	chid := *k
+
+	err = session.RegisterClient(cname, chid, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
 	}
@@ -50,39 +60,55 @@ func RegisterClientHandle(g *env.Global, w http.ResponseWriter, r *http.Request)
 		struct {
 			Value int `json:"value"`
 		}{
-			Value: *chid,
+			Value: chid,
 		},
 	)
 
 	return nil
 }
 
-// GetSessionKey : POST client/handle/host/key : return a session key for hosting
+// RequestSessionKey : POST client/handle/host/key : return a session key for hosting
 func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	g.Prefix("handler", "client", "reqhostkey")
-	defer g.PrefixReset()
-
-	g.Printf("new session key has been requested")
-
 	j, err := parseJSONInt(r.Body)
 	if err != nil {
 		return raiseServerError(err)
 	} else if j == nil {
-		return raiseServerError(errors.New("nil key in GetSessionKey (line 72)"))
+		return raiseServerError(errors.New("nil key in RequestSessionKey (line 70)"))
 	}
 
-	g.Printf("client [handle id: %d]", *j) // TODO: generate key rather than passing into func??
+	chid := *j
 
-	sid, err := session.MapToClient(*j, g.SessionKeyGenerator, g.Pool, g.Log)
+	defer g.PrefixReset()
+	g.Prefix("handler", "client", "reqhostkey")
+	g.Printf("session key has been requested by [clienthandle id: %d]", chid)
+
+	var sessionHostKey int = -1
+
+	mapped, err := session.IsMapped(chid, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
+	} else if !mapped && err == nil {
+
+		//g.Printf("client [handle id: %d]", *j)
+
+		k, err := g.KeyManager.GenerateNextSessionKey()
+		if err != nil {
+			return raiseServerError(err)
+		}
+
+		sessionHostKey := *k
+
+		err = session.MapToClient(chid, sessionHostKey, g.Pool, g.Log)
+		if err != nil {
+			return raiseServerError(err)
+		}
 	}
 
 	json.NewEncoder(w).Encode(
 		struct {
 			Value int `json:"value"`
 		}{
-			Value: *sid,
+			Value: sessionHostKey,
 		},
 	)
 

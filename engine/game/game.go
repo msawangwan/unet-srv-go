@@ -13,7 +13,6 @@ import (
 const (
 	// game db sim
 	hk_gameHandleKey = "game:handle:table" // maps gameid -> concat(prefix, [gname|id])
-
 )
 
 // hash fields
@@ -40,12 +39,12 @@ func NewGameHandle(id int) *GameHandle {
 }
 
 // LoadNew loads a new game given a clientID
-func LoadNew(cid int, id int, p *pool.Pool, l *debug.Log) error {
-	v := fmt.Sprintf("%s:%d", phk_gameHandleSimulation, id)
+func LoadNew(gamename string, id int, p *pool.Pool, l *debug.Log) error {
+	v := fmt.Sprintf("%s:%s", phk_gameHandleSimulation, gamename)
 
 	l.Prefix("game", "loadnew")
 	l.PrefixReset()
-	l.Printf("loading a new game [gameid: %d][lookup key: %s] created by [client: %d] ...", id, v, cid)
+	l.Printf("loading a new game [gamename: %s][lookup key: %s] ...", gamename, v)
 
 	p.Cmd("HMSET", hk_gameHandleKey, strconv.Itoa(id), v)
 

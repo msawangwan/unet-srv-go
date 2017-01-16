@@ -8,8 +8,9 @@ import (
 	"github.com/msawangwan/unet-srv-go/db"
 	"github.com/msawangwan/unet-srv-go/debug"
 
-	"github.com/msawangwan/unet-srv-go/engine/game"
-	"github.com/msawangwan/unet-srv-go/engine/session"
+	//"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/manager"
+	//"github.com/msawangwan/unet-srv-go/engine/session"
 )
 
 // Global encapsulates global handlers
@@ -19,10 +20,11 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	SessionHandleManager *session.HandleManager
-	SessionKeyGenerator  *session.KeyGenerator
+	//	SessionHandleManager *session.HandleManager
+	//	SessionKeyGenerator  *session.KeyGenerator
+	KeyManager *manager.KeyGenerator
 
-	GameSimulationTable *game.SimulationTable
+	//GameSimulationTable *game.SimulationTable
 
 	GlobalError chan error
 
@@ -40,14 +42,14 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 		}
 	}
 
-	hmanager, err := session.NewHandleManager(100, redis.Pool, log) // TODO: get max capactiy from conf
+	//	hmanager, err := session.NewHandleManager(100, redis.Pool, log) // TODO: get max capactiy from conf
+	//	checkErr(err, log)
+
+	kgen, err := manager.NewKeyGenerator(redis.Pool, log)
 	checkErr(err, log)
 
-	kgen, err := session.NewKeyGenerator(redis.Pool, log)
-	checkErr(err, log)
-
-	gsimtable, err := game.NewSimulationTable(100, redis.Pool, log)
-	checkErr(err, log)
+	//gsimtable, err := game.NewSimulationTable(100, redis.Pool, log)
+	//checkErr(err, log)
 
 	g := &Global{
 		GameParameters: param,
@@ -55,10 +57,10 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 		PostgreHandle:  pg,
 		Log:            log,
 
-		SessionHandleManager: hmanager,
-		SessionKeyGenerator:  kgen,
+		//		SessionHandleManager: hmanager,
+		KeyManager: kgen,
 
-		GameSimulationTable: gsimtable,
+		//	GameSimulationTable: gsimtable,
 
 		GlobalError: errc,
 	}

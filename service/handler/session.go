@@ -76,39 +76,43 @@ func FetchAllActiveSessions(g *env.Global, w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// LoadGameHandler : POST session/handle/game
+// LoadGameHandler : POST session/handle/game/load
 func LoadGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
-		id, gid int
-		cid, gk *int
+		gname string
+		gid   int
+		gk    *int
 	)
 
-	// client needs to send:
-	// - client id (session id?? or can we get it from the cid??)
-
-	cid, err := parseJSONInt(r.Body)
+	j, err := parseJSON(r.Body)
 	if err != nil {
 		return raiseServerError(err)
-	} else if cid == nil {
-		return raiseServerError(errors.New("nil key in LoadGameHandler (line 88)"))
 	}
 
-	id = *cid
+	var (
+		errJsonReadError = errors.New("[LoadGameHandler()] failed to parse client name from json (line 94)")
+		errNilKey        = errors.New("[LoadGameHandler()] nil key (line: 68)")
+	)
 
-	// server then:
-	// enters a new instance in redis
-	// returns a key to get the instance later
+	s, err := marshallJSONString(j)
+	if err != nil {
+		return raiseServerError(err)
+	} else if s == nil {
+		return raiseServerError(errJsonReadError)
+	}
 
-	gk, err = g.SessionKeyGenerator.GenerateNextGameID()
+	gname = *s
+
+	gk, err = g.KeyManager.GenerateNextGameID()
 	if err != nil {
 		return raiseServerError(err)
 	} else if gk == nil {
-		return raiseServerError(errors.New("[LoadGameHandler()] nil key (line: 68)"))
+		return raiseServerError(errNilKey)
 	}
 
 	gid = *gk
 
-	err = game.LoadNew(id, gid, g.Pool, g.Log)
+	err = game.LoadNew(gname, gid, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
 	}
@@ -119,6 +123,7 @@ func LoadGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) exce
 	g.Printf("recvd request to load game")
 	g.Printf("created a game key [key: %d]", gid)
 	g.Printf("sending key to client ...")
+	g.Printf("clients may now join this game using [key: %d]", gid)
 
 	json.NewEncoder(w).Encode(
 		struct {
@@ -129,7 +134,7 @@ func LoadGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) exce
 	)
 
 	// once loaded, a player can then join
-	// only a host can load
+	// only a host can load (ie, call this endpoint/function)
 
 	return nil
 }
