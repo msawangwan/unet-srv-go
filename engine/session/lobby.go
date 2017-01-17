@@ -1,40 +1,63 @@
 package session
 
 import (
+	"fmt"
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
 // hash keys
-const (
-	hk_gameLobbyList = "game:name:id" // a map of gamename -> started (bool)
-)
+//const (
+//	hk_gameLobbyList = "game:lobby-map" // a map of gamename -> started (bool)
+//)
 
 // set keys
-const (
-	sk_namesInUse = "game:name:in-use" // set of names that are already taken
-)
+//const (
+//	sk_namesInUse = "game:lobby:names-in-use" // set of names that are already taken
+//)
 
 // Lobby represents a list of attached (to session handles) simulations
 type Lobby struct {
 	Listing []string `json:"listing"`
 }
 
+func GetLobby(p *pool.Pool, l *debug.Log) ([]string, error) {
+	defer func() {
+		l.PrefixReset()
+	}()
+
+	l.Prefix("lobby", "populategamelist")
+	l.Printf("fetching ...")
+
+	games, err := p.Cmd("SMEMBERS", gameNames()).List()
+	if err != nil {
+		return nil, err
+	}
+
+	listing := make([]string, len(games))
+
+	for i, g := range games {
+		l.Printf("%d) %s\n", g)
+		listing[i] = g
+	}
+
+	return listing, nil
+}
+
 // PopulateLobbyList hits the redis store to generate the latest lobby list
 func (lobby *Lobby) PopulateLobbyList(p *pool.Pool, l *debug.Log) error {
 	defer func() {
-		l.SetPrefixDefault()
+		l.PrefixReset()
 	}()
 
-	l.SetPrefix("[LOBBY][INFO] ")
+	l.Prefix("lobby", "info")
 	l.Printf("fetching lobby list ...\n")
 
-	r := p.Cmd("SMEMBERS", sk_namesInUse) // TODO: this hasn't been fixed
-	if r.Err != nil {
-		return r.Err
+	sessions, err := p.Cmd("SMEMBERS", gameNames()).List()
+	if err != nil {
+		return err
 	}
 
-	sessions, _ := r.List()
 	lobby.Listing = make([]string, len(sessions))
 
 	for i, session := range sessions {
@@ -47,7 +70,7 @@ func (lobby *Lobby) PopulateLobbyList(p *pool.Pool, l *debug.Log) error {
 
 // CheckAvailability checks a given name against a list of all active simulations to check for uniqueness
 func IsGameNameUnique(name string, p *pool.Pool) (bool, error) {
-	res, err := p.Cmd("SISMEMBER", sk_namesInUse, name).Int()
+	res, err := p.Cmd("SISMEMBER", gameNames(), name).Int()
 	if err != nil {
 		return false, err
 	} else if res == 1 {
@@ -58,26 +81,19 @@ func IsGameNameUnique(name string, p *pool.Pool) (bool, error) {
 }
 
 // PostGameToLobby adds the game name to a set of names
-func PostGameToLobby(name string, p *pool.Pool) error {
-	conn, err := p.Get()
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		p.Put(conn)
-	}()
-
-	if err = conn.Cmd("MULTI").Err; err != nil {
-		return err
-	}
-
-	conn.Cmd("SADD", sk_namesInUse, name)
-	conn.Cmd("HMSET", hk_gameLobbyList, name, false)
-
-	if err = conn.Cmd("EXEC").Err; err != nil {
-		return err
-	}
+func PostGameToLobby(gameid int, gamename string, p *pool.Pool, l *debug.Log) error {
+	p.Cmd("SADD", gameNames(), gamename)
+	p.Cmd("HSET", gameLobby(), gamename, gameid)
 
 	return nil
+}
+
+// set key, for fast member test
+func gameNames() string {
+	return fmt.Sprintf("%s:%s", "lobby", "names")
+}
+
+// hash map (also fast...?) to get key mapped to name
+func gameLobby() string {
+	return fmt.Sprintf("%s:%s", "lobby", "games")
 }
