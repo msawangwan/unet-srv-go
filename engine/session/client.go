@@ -37,9 +37,6 @@ func forge(prefix string, val string, l *debug.Log) string {
 	return k
 }
 
-// ClientHandle is currently not in use
-type ClientHandle struct{}
-
 // RegisterClient returns an id mapped to the passed in client (player) name, this id is used to uniquely identify the client on future requests
 func RegisterClient(clientName string, clientID int, conns *pool.Pool, log *debug.Log) error {
 	conn, err := conns.Get()

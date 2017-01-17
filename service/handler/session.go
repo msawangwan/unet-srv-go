@@ -46,17 +46,8 @@ func VerifyName(g *env.Global, w http.ResponseWriter, r *http.Request) exception
 	return nil
 }
 
-// FetchAllActiveSessions : GET session/join/lobby/list
+// FetchLobby : GET session/handle/lobby/list
 func FetchLobby(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	//	var (
-	//		l = &session.Lobby{}
-	//	)
-
-	//	err := l.PopulateLobbyList(g.Pool, g.Log)
-	//	if err != nil {
-	//		return raise(err, err.Error(), 500)
-	//	}
-
 	listing, err := session.GetLobby(g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)

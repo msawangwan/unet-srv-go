@@ -48,9 +48,9 @@ func NewRouteTable(globals *env.Global) *Table {
 				Pattern: cache("session/handle/name/verification"),
 				Handler: resource.Context{globals, handler.VerifyName},
 			},
-			"session/handle/lobby/fetch": &route{
-				Method:  "",
-				Pattern: cache(""),
+			"session/handle/lobby/list": &route{
+				Method:  "GET",
+				Pattern: cache("session/handle/lobby/list"),
 				Handler: resource.Context{globals, handler.FetchLobby},
 			},
 			"session/handle/game/load": &route{
