@@ -29,21 +29,7 @@ func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.
 		return raiseServerError(err)
 	}
 
-	//var (
-	//	gameKey int
-	//)
-
-	//j, err := parseJSONInt(r.Body)
-	//if err != nil {
-	//	return raiseServerError(err)
-	//} else if j == nil {
-	//	return raiseServerError(errors.New("nil game key was sent by the client"))
-	//}
-
-	//gameKey = *j
-
 	err = game.LoadWorld(
-		//gameKey,
 		createreq.GameKey,
 		g.WorldNodeCount,
 		g.WorldScale,

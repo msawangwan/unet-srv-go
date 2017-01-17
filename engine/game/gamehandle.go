@@ -56,6 +56,20 @@ func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) erro
 	return nil
 }
 
+func GetExistingGameByID(gamename string, p *pool.Pool, l *debug.Log) (*int, error) {
+	lobbygameid, err := p.Cmd("HGET", gameLobby(), gamename).Str()
+	if err != nil {
+		return nil, err
+	}
+
+	gameid, err := strconv.Atoi(lobbygameid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gameid, nil
+}
+
 func Join(gameid int, playername string, p *pool.Pool, l *debug.Log) error {
 	gamehandlerstring := GameHandlerString(gameid)
 	gameplayerliststring := fmt.Sprintf("%s:%s", gamehandlerstring, "playerlist")
@@ -102,4 +116,14 @@ func GenerateSeed() int64 {
 // GenerateSeedDebug returns the same world seed every time, for debug only
 func GenerateSeedDebug() int64 {
 	return 1482284596187742126
+}
+
+// set of game names
+func gameNames() string {
+	return fmt.Sprintf("%s:%s", "lobby", "names")
+}
+
+// hash mapped name -> key
+func gameLobby() string {
+	return fmt.Sprintf("%s:%s", "lobby", "games")
 }

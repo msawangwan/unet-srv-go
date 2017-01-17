@@ -53,10 +53,15 @@ func NewRouteTable(globals *env.Global) *Table {
 				Pattern: cache("session/handle/lobby/list"),
 				Handler: resource.Context{globals, handler.FetchLobby},
 			},
-			"session/handle/game/load": &route{
+			"session/handle/game/load/host": &route{
 				Method:  "POST",
-				Pattern: cache("session/handle/game/load"),
-				Handler: resource.Context{globals, handler.LoadGameHandler},
+				Pattern: cache("session/handle/game/load/host"),
+				Handler: resource.Context{globals, handler.LoadHostGameHandler},
+			},
+			"session/handle/game/load/client": &route{
+				Method:  "POST",
+				Pattern: cache("session/handle/game/load/client"),
+				Handler: resource.Context{globals, handler.LoadClientGameHandler},
 			},
 			"game/world/load": &route{
 				Method:  "POST",
