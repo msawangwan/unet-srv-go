@@ -21,22 +21,16 @@ func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *p
 		l.PrefixReset()
 	}()
 
-	game, err := conn.Cmd("HGET", hk_gameHandleKey, strconv.Itoa(gkey)).Str()
+	gamehandlerstring := GameHandlerString(gkey)
+
+	seedp, err := GetSeed(gkey, p, l)
 	if err != nil {
 		return err
 	}
 
-	seedString, err := conn.Cmd("HGET", game, hf_seed).Str()
-	if err != nil {
-		return err
-	}
+	seed := *seedp
 
-	seed, err := strconv.ParseInt(seedString, 10, 64)
-	if err != nil {
-		return err
-	}
-
-	worldKey := fmt.Sprintf("%s:%s", game, "nodes")
+	worldKey := fmt.Sprintf("%s:%s", gamehandlerstring, "nodes")
 
 	world := quadrant.New(nNodes, nRad, seed)
 	world.Partition(scale, maxA)
@@ -51,7 +45,7 @@ func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *p
 		} else {
 			x, y := n.Position()
 			nodestring := fmt.Sprintf("%f:%f", x, y)
-			l.Printf("adding a node: [%s] [%s]", n.String(), nodestring)
+			l.Printf("adding a node: [%s] [%s]\n", n.String(), nodestring)
 			conn.Cmd("SADD", worldKey, nodestring)
 		}
 	}
@@ -73,12 +67,9 @@ func GetSeed(gamekey int, p *pool.Pool, l *debug.Log) (*int64, error) {
 		p.Put(conn)
 	}()
 
-	gamestring, err := conn.Cmd("HGET", hk_gameHandleKey, strconv.Itoa(gamekey)).Str()
-	if err != nil {
-		return nil, err
-	}
+	gamehandlerstring := GameHandlerString(gamekey)
 
-	seedstring, err := conn.Cmd("HGET", gamestring, hf_seed).Str()
+	seedstring, err := conn.Cmd("HGET", gamehandlerstring, hf_seed).Str()
 	if err != nil {
 		return nil, err
 	}

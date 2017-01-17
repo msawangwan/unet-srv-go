@@ -1,34 +1,50 @@
 package handler
 
 import (
-	"errors"
+	//	"errors"
 	//"strconv"
 
 	"encoding/json"
 	"net/http"
 
 	"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/session"
 	"github.com/msawangwan/unet-srv-go/env"
 	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
+type CreateWorldRequest struct {
+	GameKey  int    `json:"key"`
+	GameName string `json:"value"`
+}
+
 // Loadworld : POST game/world/load
 func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
-		gameKey int
+		createreq *CreateWorldRequest
 	)
 
-	j, err := parseJSONInt(r.Body)
+	err := json.NewDecoder(r.Body).Decode(&createreq)
 	if err != nil {
 		return raiseServerError(err)
-	} else if j == nil {
-		return raiseServerError(errors.New("nil game key was sent by the client"))
 	}
 
-	gameKey = *j
+	//var (
+	//	gameKey int
+	//)
+
+	//j, err := parseJSONInt(r.Body)
+	//if err != nil {
+	//	return raiseServerError(err)
+	//} else if j == nil {
+	//	return raiseServerError(errors.New("nil game key was sent by the client"))
+	//}
+
+	//gameKey = *j
 
 	err = game.LoadWorld(
-		gameKey,
+		//gameKey,
+		createreq.GameKey,
 		g.WorldNodeCount,
 		g.WorldScale,
 		g.NodeRadius,
@@ -42,30 +58,38 @@ func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.
 
 	defer g.PrefixReset()
 	g.Prefix("handler", "game", "loadworld")
-	g.Printf("loaded game world [gamekey: %d]", gameKey)
+	g.Printf("loaded game world [gamekey: %d]", createreq.GameKey)
+
+	err = session.PostGameToLobby(createreq.GameKey, createreq.GameName, g.Pool, g.Log)
+	if err != nil {
+		return raiseServerError(err)
+	}
 
 	return nil
 }
 
-type jbool struct {
-	Key   int  `json:"key"`
-	Value bool `json:"value"`
+type JoinRequest struct {
+	GameKey    int    `json:"gameKey"`
+	PlayerName string `json:"playerName"`
+	Host       bool   `json:"host"`
 }
 
 func JoinGameWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
-		j jbool
+		joinReq *JoinRequest
 	)
 
-	err := json.NewDecoder(r.Body).Decode(&j)
+	err := json.NewDecoder(r.Body).Decode(&joinReq)
 	if err != nil {
 		return raiseServerError(err)
 	}
 
-	seed, err := game.GetSeed(j.Key, g.Pool, g.Log)
+	seed, err := game.GetSeed(joinReq.GameKey, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
 	}
+
+	game.Join(joinReq.GameKey, joinReq.PlayerName, g.Pool, g.Log)
 
 	json.NewEncoder(w).Encode(
 		struct {

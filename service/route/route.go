@@ -38,20 +38,20 @@ func NewRouteTable(globals *env.Global) *Table {
 				Pattern: cache("client/handle/register"),
 				Handler: resource.Context{globals, handler.RegisterClientHandle},
 			},
-			"client/handle/host/key": &route{
+			"client/handle/session/key": &route{
 				Method:  "POST",
-				Pattern: cache("client/handle/host/key"),
+				Pattern: cache("client/handle/session/key"),
 				Handler: resource.Context{globals, handler.RequestHostingKey},
-			},
-			"client/handle/join/key": &route{
-				Method:  "POST",
-				Pattern: cache("client/handle/join/key"),
-				Handler: resource.Context{globals, handler.RequestJoinKey},
 			},
 			"session/handle/name/verification": &route{
 				Method:  "POST",
 				Pattern: cache("session/handle/name/verification"),
 				Handler: resource.Context{globals, handler.VerifyName},
+			},
+			"session/handle/lobby/fetch": &route{
+				Method:  "",
+				Pattern: cache(""),
+				Handler: resource.Context{globals, handler.FetchLobby},
 			},
 			"session/handle/game/load": &route{
 				Method:  "POST",
@@ -67,6 +67,16 @@ func NewRouteTable(globals *env.Global) *Table {
 				Method:  "POST",
 				Pattern: cache("game/world/join"),
 				Handler: resource.Context{globals, handler.JoinGameWorld},
+			},
+			"poll/start": &route{
+				Method:  "POST",
+				Pattern: cache("poll/start"),
+				Handler: resource.Context{globals, handler.PollStart},
+			},
+			"poll/update": &route{
+				Method:  "POST",
+				Pattern: cache("poll/update"),
+				Handler: resource.Context{globals, handler.PollUpdate},
 			},
 		},
 	}

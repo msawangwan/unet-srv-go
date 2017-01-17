@@ -66,7 +66,10 @@ func (uh *UpdateHandler) Monitor() {
 		case <-uh.kill:
 			uh.Prefix("update", "monitor")
 			uh.Printf("terminated, running cleanup (use ctrl+c to exit) ...\n")
+			uh.Printf("WARNING: database has been flushed due to running in debug mode")
 			uh.PrefixReset()
+
+			uh.Cmd("FLUSHDB")
 
 			signal.Stop(uh.kill)
 			uh.Error <- errTerminatedByAdmin

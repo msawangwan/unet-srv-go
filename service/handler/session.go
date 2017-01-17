@@ -15,9 +15,6 @@ import (
 
 // VerifyName : POST session/handle/name/verification : check if unique name
 func VerifyName(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	g.Prefix("handler", "session", "verifyname")
-	defer g.PrefixReset()
-
 	j, err := parseJSON(r.Body)
 	if err != nil {
 		return raiseServerError(err)
@@ -28,23 +25,15 @@ func VerifyName(g *env.Global, w http.ResponseWriter, r *http.Request) exception
 		return raiseServerError(err)
 	}
 
-	g.Printf("client requests to use [gamename: %s]", *s)
-
 	b, err := session.IsGameNameUnique(*s, g.Pool)
 	if err != nil {
 		return raiseServerError(err)
 	}
 
+	defer g.PrefixReset()
+	g.Prefix("handler", "session", "verifyname")
+	g.Printf("client requests to use [gamename: %s]", *s)
 	g.Printf("gamename is unique: [%t]", b)
-
-	if b {
-		err = session.PostGameToLobby(*s, g.Pool)
-		if err != nil {
-			return raiseServerError(err)
-		} else {
-			g.Printf("posted session to lobby")
-		}
-	}
 
 	json.NewEncoder(w).Encode(
 		struct {
@@ -58,20 +47,31 @@ func VerifyName(g *env.Global, w http.ResponseWriter, r *http.Request) exception
 }
 
 // FetchAllActiveSessions : GET session/join/lobby/list
-func FetchAllActiveSessions(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	var (
-		l = &session.Lobby{}
-	)
+func FetchLobby(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	//	var (
+	//		l = &session.Lobby{}
+	//	)
 
-	err := l.PopulateLobbyList(g.Pool, g.Log)
+	//	err := l.PopulateLobbyList(g.Pool, g.Log)
+	//	if err != nil {
+	//		return raise(err, err.Error(), 500)
+	//	}
+
+	listing, err := session.GetLobby(g.Pool, g.Log)
 	if err != nil {
-		return raise(err, err.Error(), 500)
+		return raiseServerError(err)
 	}
 
 	g.Prefix("handler", "session", "fetchlobby")
-	g.Printf("lobby listing: %v", l)
+	g.Printf("lobby listing: %q", listing)
 
-	json.NewEncoder(w).Encode(l)
+	json.NewEncoder(w).Encode(
+		struct {
+			Listing []string `json:"listing"`
+		}{
+			Listing: listing,
+		},
+	)
 
 	return nil
 }
@@ -112,7 +112,7 @@ func LoadGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) exce
 
 	gid = *gk
 
-	err = game.CreateNewHandler(gname, gid, g.Pool, g.Log)
+	err = game.CreateNewGame(gname, gid, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
 	}

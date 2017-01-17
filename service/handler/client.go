@@ -73,7 +73,7 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 	g.Prefix("handler", "client", "reqhostkey")
 	g.Printf("session key has been requested by client [handle id: %d]", chid)
 
-	var sessionHostKey int = -1
+	var sessionKey int = -1
 
 	mapped, err := session.IsMapped(chid, g.Pool, g.Log)
 	if err != nil {
@@ -84,17 +84,17 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 			return raiseServerError(err)
 		}
 
-		sessionHostKey = *k
+		sessionKey = *k
 
-		err = session.MapToClient(chid, sessionHostKey, g.Pool, g.Log)
+		err = session.MapToClient(chid, sessionKey, g.Pool, g.Log)
 		if err != nil {
 			return raiseServerError(err)
 		}
 
-		g.Prefix("handler", "client", "reqhostkey")
-		g.Printf("mapped session [key: %d] to client [handle id: %d]", sessionHostKey, chid)
+		g.Prefix("handler", "client", "reqsessionkey")
+		g.Printf("mapped session [key: %d] to client [handle id: %d]", sessionKey, chid)
 	} else {
-		g.Prefix("handler", "client", "reqhostkey")
+		g.Prefix("handler", "client", "reqsessionkey")
 		g.Printf("client already has a key, ignored request")
 	}
 
@@ -102,13 +102,9 @@ func RequestHostingKey(g *env.Global, w http.ResponseWriter, r *http.Request) ex
 		struct {
 			Value int `json:"value"`
 		}{
-			Value: sessionHostKey,
+			Value: sessionKey,
 		},
 	)
 
-	return nil
-}
-
-func RequestJoinKey(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	return nil
 }

@@ -8,9 +8,9 @@ import (
 	"github.com/msawangwan/unet-srv-go/db"
 	"github.com/msawangwan/unet-srv-go/debug"
 
-	//"github.com/msawangwan/unet-srv-go/engine/game"
+	"github.com/msawangwan/unet-srv-go/engine/event"
+	//	"github.com/msawangwan/unet-srv-go/engine/game"
 	"github.com/msawangwan/unet-srv-go/engine/manager"
-	//"github.com/msawangwan/unet-srv-go/engine/session"
 )
 
 // Global encapsulates global handlers
@@ -20,7 +20,9 @@ type Global struct {
 	*db.PostgreHandle
 	*debug.Log
 
-	KeyManager *manager.KeyGenerator
+	//	GameRegistry *game.Emitter
+	KeyManager   *manager.KeyGenerator
+	EventEmitter *event.Emitter
 
 	GlobalError chan error
 
@@ -38,7 +40,13 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 		}
 	}
 
+	//	gamereg, err := game.NewRegistry(redis.Pool, log)
+	//	checkErr(err, log)
+
 	kgen, err := manager.NewKeyGenerator(redis.Pool, log)
+	checkErr(err, log)
+
+	emitter, err := event.NewEmitter(redis.Pool, log)
 	checkErr(err, log)
 
 	g := &Global{
@@ -47,7 +55,9 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 		PostgreHandle:  pg,
 		Log:            log,
 
-		KeyManager: kgen,
+		//		GameRegistry: gamereg,
+		KeyManager:   kgen,
+		EventEmitter: emitter,
 
 		GlobalError: errc,
 	}
