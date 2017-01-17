@@ -9,13 +9,13 @@ import (
 	"github.com/msawangwan/unet-srv-go/service/route"
 )
 
-// Multiplexer is the main client gateway
+// Multiplexer is the application gateway
 type Multiplexer struct {
 	*env.Global
 	*route.Table
 }
 
-// NewMultiplexer is a factory function
+// NewMultiplexer is a factory that returns a new mux
 func NewMultiplexer(environment *env.Global, routeTable *route.Table) *Multiplexer {
 	if routeTable == nil {
 		return &Multiplexer{
@@ -37,8 +37,8 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		resource   string = r.URL.Path
 	)
 
-	mux.SetPrefix("[GATEWAY][MULTIPLEXER] ")
-	defer mux.SetPrefixDefault()
+	mux.Prefix("gateway", "multiplexer")
+	defer mux.PrefixReset()
 
 	ps := strings.Split(resource, "/")
 

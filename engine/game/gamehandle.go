@@ -13,7 +13,7 @@ import (
 // hash fields
 const (
 	hf_gameKey = "game_key"
-	hf_seed    = "game_seed"
+	hf_seed    = "world_seed"
 	hf_players = "game_player_list"
 )
 
