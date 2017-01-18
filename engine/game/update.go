@@ -13,10 +13,6 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-const (
-	statusUpdateInterval = 5000 * time.Millisecond
-)
-
 var (
 	errTerminatedByAdmin = errors.New("update was terminated by admin")
 )
@@ -55,9 +51,19 @@ func (uh *UpdateHandler) Run() {
 // Monitor prints and logs game engine stats, must be run via goroutine
 func (uh *UpdateHandler) Monitor() {
 	var (
+		interval = 2500 * time.Millisecond
+
 		active int
 		avail  int
+
+		lastactive int
+		lastavail  int
 	)
+
+	active = runtime.NumGoroutine()
+	lastactive = active
+	avail = uh.Avail()
+	lastavail = avail
 
 	signal.Notify(uh.kill, os.Interrupt, syscall.SIGTERM)
 
@@ -69,19 +75,29 @@ func (uh *UpdateHandler) Monitor() {
 			uh.Printf("WARNING: database has been flushed due to running in debug mode")
 			uh.PrefixReset()
 
-			uh.Cmd("FLUSHDB")
+			uh.Cmd("FLUSHDB") // WARNING: deletes all database tables
 
 			signal.Stop(uh.kill)
 			uh.Error <- errTerminatedByAdmin
 
 			return
 		default:
-			time.Sleep(statusUpdateInterval)
+			time.Sleep(interval)
 
 			active = runtime.NumGoroutine()
 			avail = uh.Avail()
 
+			// TODO: implement some sort of backoff
 			uh.Prefix("update", "monitor")
+			if active == lastactive && avail == lastavail {
+				uh.Printf("no change in goroutine or redis conn count, increasing interval (not implemented yet)")
+				//interval += 2000
+			} else {
+				uh.Printf("reset interval (not implemented yet)")
+				lastactive = active
+				lastavail = avail
+				//interval = 2000
+			}
 			uh.Printf("goroutine count: [%d] available redis conns [%d]\n", active, avail)
 			uh.PrefixReset()
 		}
