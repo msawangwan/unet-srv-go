@@ -22,12 +22,12 @@ func GameHandlerString(gameid int) string {
 }
 
 // LoadNew loads a new game given a gamename and gameid
-func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) error {
+func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) (*string, error) {
 	gamehandlerstring := GameHandlerString(gameid)
 
 	conn, err := p.Get()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer func() {
@@ -35,11 +35,11 @@ func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) erro
 		l.PrefixReset()
 	}()
 
-	exists, err := conn.Cmd("SISMEMBER", "game:list", gamehandlerstring).Int()
+	exists, err := conn.Cmd("SISMEMBER", "game:lookup_key", gamehandlerstring).Int()
 	if err != nil {
-		return err
+		return nil, err
 	} else if exists == 1 {
-		return errors.New("fuck you")
+		return nil, errors.New("fuck you")
 	}
 
 	seed := GenerateSeedDebug()
@@ -53,7 +53,7 @@ func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) erro
 	conn.Cmd("SADD", "game:list", gamehandlerstring)
 	conn.Cmd("HMSET", gamehandlerstring, hf_gameKey, idstring, hf_seed, seedstring, hf_players, "")
 
-	return nil
+	return &gamehandlerstring, nil
 }
 
 func GetExistingGameByID(gamename string, p *pool.Pool, l *debug.Log) (*int, error) {

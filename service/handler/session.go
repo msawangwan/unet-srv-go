@@ -97,7 +97,12 @@ func LoadHostGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) 
 
 	var gid int = *gk
 
-	err = game.CreateNewGame(gname, gid, g.Pool, g.Log)
+	gamehandlerstrp, err := game.CreateNewGame(gname, gid, g.Pool, g.Log)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	err = g.Games.Add(*gamehandlerstrp)
 	if err != nil {
 		return raiseServerError(err)
 	}

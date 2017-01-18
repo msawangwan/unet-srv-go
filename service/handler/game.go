@@ -67,25 +67,12 @@ func JoinGameWorld(g *env.Global, w http.ResponseWriter, r *http.Request) except
 		return raiseServerError(err)
 	}
 
-	//seed, err := game.GetSeed(joinReq.GameKey, g.Pool, g.Log)
-	//if err != nil {
-	//	return raiseServerError(err)
-	//}
-
 	params, err := game.GetGameParameters(joinReq.GameKey, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
 	}
 
 	game.Join(joinReq.GameKey, joinReq.PlayerName, g.Pool, g.Log)
-
-	//json.NewEncoder(w).Encode(
-	//	struct {
-	//		Value int64 `json:"value"`
-	//	}{
-	//		Value: *seed,
-	//	},
-	//)
 
 	json.NewEncoder(w).Encode(params)
 
