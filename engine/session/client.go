@@ -33,6 +33,8 @@ func marshallIntPointer(np *int) string {
 // wrapper to print the key we made
 func forge(prefix string, val string, l *debug.Log) string {
 	k := fmt.Sprintf("%s:%s", prefix, val)
+	defer l.PrefixReset()
+	l.Prefix("session", "keygen", "forgedkey")
 	l.Printf("forged [key: %s]", k)
 	return k
 }
