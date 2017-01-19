@@ -17,6 +17,7 @@ const (
 	hf_players = "game_player_list"
 )
 
+// GameHandlerString returns a game redis lookup string given an int id
 func GameHandlerString(gameid int) string {
 	return fmt.Sprintf("%s:%d", "game", gameid)
 }

@@ -107,7 +107,7 @@ func LoadHostGameHandler(g *env.Global, w http.ResponseWriter, r *http.Request) 
 		return raiseServerError(err)
 	}
 
-	sim.WaitUntilAllClientsReady(g.Pool, g.Log)
+	_, _ = sim.WaitUntilAllClientsReady(g.Pool, g.Log)
 
 	g.Prefix("handler", "game", "loadhost")
 	defer g.PrefixReset()

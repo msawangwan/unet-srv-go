@@ -1,25 +1,50 @@
 package handler
 
 import (
-	//"io"
-
+	"encoding/json"
 	"net/http"
 
 	"github.com/msawangwan/unet-srv-go/env"
 	"github.com/msawangwan/unet-srv-go/service/exception"
+
+	"github.com/msawangwan/unet-srv-go/engine/game"
 )
 
 // PollStart : poll/start
 func PollStart(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	//io.WriteString(w, <-event)
+	j, err := parseJSONInt(r.Body)
+	if err != nil {
+		return raiseServerError(err)
+	}
 
-	// for below continued see game.Simulation and Table etc.. left off there
+	gamehandlerstr := game.GameHandlerString(*j)
 
-	// client sends the game key
-	// server concats to make the table look up key
-	// client waits
-	// server checks redis at interval for number of players
-	// when 2 players, server writes to all clients down the channel some sort of starting code?
+	sim, err := g.Games.Get(gamehandlerstr)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	putconsole := func(s string, id int) {
+		g.Prefix("handler", "poller", "start")
+		g.Printf("game [%d][%s]", id, s)
+		g.PrefixReset()
+	}
+
+	putconsole("client waiting for game start ...", *j)
+
+	<-sim.Start // long poller blocking
+
+	putconsole("client got start signal ...", *j)
+
+	// TODO: SEND A HASHED KEY TO ALL CLIENTS temp  willl always send the same debug value
+
+	json.NewEncoder(w).Encode(
+		struct {
+			Value int `json:"value"`
+		}{
+			Value: 123456,
+		},
+	)
 
 	return nil
 }
