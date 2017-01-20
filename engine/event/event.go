@@ -29,10 +29,6 @@ func NewEmitter(p *pool.Pool, l *debug.Log) (*Emitter, error) {
 	return e, nil
 }
 
-// - client sends gamekey to server
-// - server gets game from redis using the key
-// - server will emit msg to all clients on the game playerlist (except sender?)
-
 func (e *Emitter) Register(gamekey int, playername string) error {
 	conn, err := e.Get()
 	if err != nil {

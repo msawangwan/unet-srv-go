@@ -10,21 +10,25 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-// hash fields
-const (
-	hf_gameKey = "game_key"
-	hf_seed    = "world_seed"
-	hf_players = "game_player_list"
-)
-
-// GameHandlerString returns a game redis lookup string given an int id
-func GameHandlerString(gameid int) string {
+// the main key -- converts a game id into a redis string
+func GameLookupString(gameid int) string {
 	return fmt.Sprintf("%s:%d", "game", gameid)
+}
+
+// a hash mapping of game param -> value
+func GameParamString(gamelookupstr string) string {
+	return fmt.Sprintf("%s:%s", gamelookupstr, "param")
+}
+
+// a set, lists the players currently in the game
+func GamePlayerListString(gamelookupstr string) string {
+	return fmt.Sprintf("%s:%s", gamelookupstr, "playerlist")
 }
 
 // LoadNew loads a new game given a gamename and gameid
 func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) (*string, error) {
-	gamehandlerstring := GameHandlerString(gameid)
+	gamelookupstr := GameLookupString(gameid)
+	gameparamstr := GameParamString(gamelookupstr)
 
 	conn, err := p.Get()
 	if err != nil {
@@ -36,25 +40,26 @@ func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) (*st
 		l.PrefixReset()
 	}()
 
-	exists, err := conn.Cmd("SISMEMBER", "game:lookup_key", gamehandlerstring).Int()
+	existing, err := conn.Cmd("EXISTS", gamelookupstr).Int()
 	if err != nil {
 		return nil, err
-	} else if exists == 1 {
-		return nil, errors.New("fuck you")
+	} else if existing == 1 {
+		return nil, errors.New("fuck you game exists u shit")
 	}
 
 	seed := GenerateSeedDebug()
 
+	hasstartedstr := strconv.FormatBool(false)
 	seedstring := strconv.FormatInt(seed, 10)
 	idstring := strconv.Itoa(gameid)
 
 	l.Prefix("game", "createnew")
-	l.Printf("loading a new game [gamename: %s][lookup key: %s][seed: %s] ...", gamename, gamehandlerstring, seedstring)
+	l.Printf("loading a new game [gamename: %s][lookup key: %s][seed: %s] ...", gamename, gameparamstr, seedstring)
 
-	conn.Cmd("SADD", "game:list", gamehandlerstring)
-	conn.Cmd("HMSET", gamehandlerstring, hf_gameKey, idstring, hf_seed, seedstring, hf_players, "")
+	conn.Cmd("HMSET", gamelookupstr, "game_id", idstring, "game_name", gamename)
+	conn.Cmd("HMSET", gameparamstr, "game_id", idstring, "world_seed", seedstring, "has_started", hasstartedstr)
 
-	return &gamehandlerstring, nil
+	return &gamelookupstr, nil
 }
 
 func GetExistingGameByID(gamename string, p *pool.Pool, l *debug.Log) (*int, error) {
@@ -72,8 +77,7 @@ func GetExistingGameByID(gamename string, p *pool.Pool, l *debug.Log) (*int, err
 }
 
 func Join(gameid int, playername string, p *pool.Pool, l *debug.Log) error {
-	gamehandlerstring := GameHandlerString(gameid)
-	gameplayerliststring := fmt.Sprintf("%s:%s", gamehandlerstring, "playerlist")
+	gameplayerliststring := GamePlayerListString(GameLookupString(gameid))
 
 	conn, err := p.Get()
 	if err != nil {

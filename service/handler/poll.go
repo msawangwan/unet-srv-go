@@ -1,6 +1,8 @@
 package handler
 
 import (
+	//	"fmt"
+
 	"encoding/json"
 	"net/http"
 
@@ -10,39 +12,45 @@ import (
 	"github.com/msawangwan/unet-srv-go/engine/game"
 )
 
+type PlayerReadyNotification struct {
+	GameID     int
+	PlayerName string
+}
+
 // PollStart : poll/start
 func PollStart(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
-	j, err := parseJSONInt(r.Body)
+	var prreq *PlayerReadyNotification
+
+	err := json.NewDecoder(r.Body).Decode(&prreq)
 	if err != nil {
 		return raiseServerError(err)
 	}
 
-	gamehandlerstr := game.GameHandlerString(*j)
-
-	sim, err := g.Games.Get(gamehandlerstr)
+	sim, err := g.Games.Get(game.GameLookupString((prreq.GameID)))
 	if err != nil {
 		return raiseServerError(err)
 	}
 
-	putconsole := func(s string, id int) {
-		g.Prefix("handler", "poller", "start")
-		g.Printf("game [%d][%s]", id, s)
+	sim.PlayerJoinedEvent <- game.OnJoin{prreq.PlayerName}
+
+	select {
+	case <-sim.NotifyStart:
+		g.Prefix("handler", "pollstart")
+		g.Printf("client handler responding to long-poll request, got start signal ...")
 		g.PrefixReset()
+	case err = <-sim.NotifyError:
+		return raiseServerError(err)
 	}
 
-	putconsole("client waiting for game start ...", *j)
-
-	<-sim.Start // long poller blocking
-
-	putconsole("client got start signal ...", *j)
-
-	// TODO: SEND A HASHED KEY TO ALL CLIENTS temp  willl always send the same debug value
+	opponent := <-sim.GetOpponent(prreq.PlayerName)
 
 	json.NewEncoder(w).Encode(
 		struct {
-			Value int `json:"value"`
+			Key   int    `json:"key"`
+			Value string `json:"value"`
 		}{
-			Value: 123456,
+			Key:   12345, // TODO: non-debug will be random hashed int
+			Value: opponent,
 		},
 	)
 

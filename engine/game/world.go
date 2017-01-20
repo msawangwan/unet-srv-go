@@ -10,7 +10,11 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *pool.Pool, l *debug.Log) error {
+func GameNodeString(gamelookupstr string) string {
+	return fmt.Sprintf("%s:%s", gamelookupstr, "nodes")
+}
+
+func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p *pool.Pool, l *debug.Log) error {
 	conn, err := p.Get()
 	if err != nil {
 		return err
@@ -21,9 +25,11 @@ func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *p
 		l.PrefixReset()
 	}()
 
-	gamehandlerstring := GameHandlerString(gkey)
+	gamelookupstr := GameLookupString(gameid)
+	gameparamstr := GameParamString(gamelookupstr)
+	gamenodestr := GameNodeString(gamelookupstr)
 
-	seedp, err := GetSeed(gkey, p, l)
+	seedp, err := GetSeed(gameid, p, l)
 	if err != nil {
 		return err
 	}
@@ -34,8 +40,6 @@ func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *p
 	world.Partition(scale, maxA)
 
 	l.Prefix("game", "world", "load")
-
-	worldnodesKey := fmt.Sprintf("%s:%s", gamehandlerstring, "nodes")
 
 	nodecountstr := strconv.Itoa(nNodes)
 	spawnattemptstr := strconv.Itoa(maxA)
@@ -53,11 +57,11 @@ func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *p
 			x, y := n.Position()
 			nodestring := fmt.Sprintf("%f:%f", x, y)
 			l.Printf("adding a node: [%s] [%s]\n", n.String(), nodestring)
-			conn.Cmd("SADD", worldnodesKey, nodestring)
+			conn.Cmd("SADD", gamenodestr, nodestring)
 		}
 	}
 
-	conn.Cmd("HMSET", gamehandlerstring, "node_count", nodecountstr, "world_scale", worldscalestr, "node_radius", noderadstr, "max_spawn_attempts", spawnattemptstr)
+	conn.Cmd("HMSET", gameparamstr, "node_count", nodecountstr, "world_scale", worldscalestr, "node_radius", noderadstr, "max_spawn_attempts", spawnattemptstr)
 
 	if err = conn.Cmd("EXEC").Err; err != nil {
 		return err
@@ -67,7 +71,7 @@ func LoadWorld(gkey int, nNodes int, scale float32, nRad float32, maxA int, p *p
 }
 
 // TODO: don't need this??? was before we were getting all params
-func GetSeed(gamekey int, p *pool.Pool, l *debug.Log) (*int64, error) {
+func GetSeed(gameid int, p *pool.Pool, l *debug.Log) (*int64, error) {
 	conn, err := p.Get()
 	if err != nil {
 		return nil, err
@@ -77,9 +81,9 @@ func GetSeed(gamekey int, p *pool.Pool, l *debug.Log) (*int64, error) {
 		p.Put(conn)
 	}()
 
-	gamehandlerstring := GameHandlerString(gamekey)
+	gameparamstr := GameParamString(GameLookupString(gameid))
 
-	seedstring, err := conn.Cmd("HGET", gamehandlerstring, hf_seed).Str()
+	seedstring, err := conn.Cmd("HGET", gameparamstr, "world_seed").Str()
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +108,7 @@ func GetGameParameters(gameid int, p *pool.Pool, l *debug.Log) (*GameParameters,
 	var params *GameParameters = &GameParameters{}
 
 	// fields: node_count, world_scale, node_radius, max_spawn_attempts, world_seed
-	m, err := p.Cmd("HGETALL", GameHandlerString(gameid)).Map()
+	m, err := p.Cmd("HGETALL", GameParamString(GameLookupString(gameid))).Map()
 	if err != nil {
 		return nil, err
 	}

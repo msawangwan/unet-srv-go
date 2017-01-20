@@ -13,94 +13,130 @@ import (
 type Simulation struct {
 	gametable *Table
 
-	handlerstring string
+	lookupstr string
 
-	Start chan bool
-	End   chan bool
-	Turn  chan int
-	Error chan error
+	//PlayerLeft        chan struct{}
+	PlayerJoinedEvent chan OnJoin
+
+	NotifyStart chan struct{}
+	NotifyEnd   chan struct{}
+	NotifyTurn  chan int
+	NotifyError chan error
+
+	SendMessage map[string]chan string // TODO: come up with better structure
 
 	StartTick  *time.Ticker
 	UpdateTick *time.Ticker
 
 	playercount int
+	gameslots   [10]string
+
+	putconsole func(stdout string)
+
+	*pool.Pool
+	*debug.Log
 }
 
-func (s *Simulation) WaitUntilAllClientsReady(p *pool.Pool, l *debug.Log) (chan bool, error) {
-	outconsole := func(s string) {
-		l.Prefix("game", "simulation")
-		l.Printf(s)
-	}
-
-	outconsole(fmt.Sprintf("new game started [%s], waiting for joining players", s.handlerstring))
-
-	gameplayerliststr := fmt.Sprintf("%s:%s", s.handlerstring, "playerlist")
-
+func (s *Simulation) WaitUntilAllClientsReady() (chan struct{}, error) {
 	go func() {
-		conn, err := p.Get()
-		if err != nil {
-			s.Error <- err
-			return
-		}
-		defer p.Put(conn)
+		s.putconsole("new game started")
 
 		for {
 			select {
 			case <-s.StartTick.C:
-				outconsole(fmt.Sprintf("waiting for players [game: %s][start ticker]", s.handlerstring))
+				s.putconsole("waiting for opponent to join ...")
 
-				playerlist, err := conn.Cmd("SMEMBERS", gameplayerliststr).List()
-				if err != nil {
-					s.Error <- err // TODO: return or not?
-				}
-
-				if len(playerlist) >= 2 {
+				if s.playercount > 1 {
 					go func() { // kill routine
-						outconsole(fmt.Sprintf("player count is [%d], notifying clients", len(playerlist)))
-						s.Start <- true
-						close(s.Start)
+						s.StartTick.Stop()
+						s.NotifyStart <- struct{}{}
+						close(s.NotifyStart)
 					}()
 				}
+			case event := <-s.PlayerJoinedEvent:
+				s.putconsole(fmt.Sprintf("player joined [%s]", event.PlayerName))
+				s.playercount += 1
+				s.gameslots[s.playercount-1] = event.PlayerName
+			case <-s.NotifyStart:
+				s.putconsole("all players joined, notifying opponent and starting game")
+				s.putconsole("printing player list")
 
-				l.PrefixReset()
-			case <-s.Start:
-				outconsole(fmt.Sprintf("all players joined, starting game [%s]", s.handlerstring))
+				playerlist, err := s.Cmd("SMEMBERS", GamePlayerListString(s.lookupstr)).List()
+				if err != nil {
+					s.NotifyError <- err
+				}
 
-				s.StartTick.Stop()
+				for i, player := range playerlist {
+					s.putconsole(fmt.Sprintf("%d) %s", i, player))
+				}
 
-				l.PrefixReset()
 				return
 			}
 		}
 	}()
 
-	return s.Start, nil // future clients will read fom this channel to get a ready signal??
+	return s.NotifyStart, nil // future clients will read fom this channel to get a ready signal??
 }
 
-func NewSimulation(gametable *Table, handlerstring string) (*Simulation, error) {
-	return &Simulation{
+func (s *Simulation) GetOpponent(playername string) chan string {
+	sendmsg := make(chan string)
+
+	s.putconsole("finding opponent name ...")
+
+	go func() {
+		for _, name := range s.gameslots {
+			if name == playername {
+				continue
+			}
+			s.putconsole(fmt.Sprintf("found oppoent [%s]", playername))
+			sendmsg <- name
+			return
+		}
+	}()
+
+	return sendmsg
+}
+
+func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Log) (*Simulation, error) {
+	sim := &Simulation{
 		gametable: gametable,
 
-		handlerstring: handlerstring,
+		lookupstr: lookupstr,
 
-		Start: make(chan bool),
-		End:   make(chan bool),
-		Turn:  make(chan int),
-		Error: make(chan error),
+		PlayerJoinedEvent: make(chan OnJoin),
+
+		NotifyStart: make(chan struct{}),
+		NotifyEnd:   make(chan struct{}),
+		NotifyTurn:  make(chan int),
+		NotifyError: make(chan error),
 
 		StartTick:  time.NewTicker(750 * time.Millisecond),
 		UpdateTick: time.NewTicker(2500 * time.Millisecond),
-	}, nil
+
+		SendMessage: make(map[string]chan string),
+
+		playercount: 0,
+
+		Pool: p,
+		Log:  l,
+	}
+
+	putconsole := func(msg string) {
+		sim.Prefix("simulation", sim.lookupstr)
+		sim.Printf("[%s] %s", sim.lookupstr, msg)
+		sim.PrefixReset()
+	}
+
+	sim.putconsole = putconsole
+
+	return sim, nil
 }
 
 type Table struct {
 	active map[string]*Simulation
 
-	waiting map[string]chan bool // start signals
-	update  map[string]chan bool // update signals
-	turn    map[string]chan bool // might not need this, can just use update or this
-
 	sync.Mutex
+
 	*pool.Pool
 	*debug.Log
 }
@@ -108,10 +144,6 @@ type Table struct {
 func NewTable(p *pool.Pool, l *debug.Log) (*Table, error) {
 	return &Table{
 		active: make(map[string]*Simulation),
-
-		waiting: make(map[string]chan bool),
-		update:  make(map[string]chan bool),
-		turn:    make(map[string]chan bool),
 
 		Pool: p,
 		Log:  l,
@@ -126,14 +158,14 @@ func (t *Table) Add(key string) (*Simulation, error) {
 	}()
 
 	t.Prefix("game", "simulation")
-	t.Printf("adding new simulation [gamename: (key) %s]", key)
+	t.Printf("adding new simulation [gamelookupstring: %s]", key)
 
 	_, exists := t.active[key]
 	if exists {
 		return nil, errors.New("already added")
 	}
 
-	sim, err := NewSimulation(t, key)
+	sim, err := NewSimulation(t, key, t.Pool, t.Log)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +183,7 @@ func (t *Table) Get(key string) (*Simulation, error) {
 	}()
 
 	t.Prefix("game", "simulation")
-	t.Printf("accessing simulation [gamename (key): %s]", key)
+	t.Printf("accessing simulation [gamelookupstring: %s]", key)
 
 	_, exists := t.active[key]
 	if exists {
@@ -160,5 +192,5 @@ func (t *Table) Get(key string) (*Simulation, error) {
 	}
 
 	t.Printf("no simulation with that key found")
-	return nil, errors.New("no simulation with that name")
+	return nil, errors.New(fmt.Sprintf("no simulation has lookup string [%s]", key))
 }
