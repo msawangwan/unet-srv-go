@@ -22,7 +22,9 @@ func newPoint(x, y, r float32) point {
 	return point{x: x, y: y, radius: r}
 }
 
-func (p point) String() string { return fmt.Sprintf("point: <%f, %f> radius: %f", p.x, p.y, p.radius) }
+func (p point) String() string {
+	return fmt.Sprintf("point: <%.4f, %.4f> radius: %.4f", p.x, p.y, p.radius)
+}
 
 // type node defines the properties of a quadrant
 type node struct {
@@ -125,16 +127,26 @@ func (n *node) tryInsert(other *node) {
 
 func (n *node) Position() (float32, float32) { return n.x, n.y }
 func (n *node) IsAttachedToTree() bool       { return n.attached }
+func (n *node) AsRedisKey() string           { return forgeRedisKey(n.x, n.y) }
 
 func (n *node) String() string {
-	return fmt.Sprintf("quadrant node: [%s] id: [%d] depth: [%d] label: [%s]", n.point, n.id, n.depth, n.label)
+	return fmt.Sprintf("node [%s] id [%d] depth [%d]", n.point, n.id, n.depth)
+}
+
+// ForgeRedisKey exports forgeRedisKey()
+func ForgeRedisKey(x, y float32) string { return forgeRedisKey(x, y) }
+
+func forgeRedisKey(x, y float32) string {
+	trunc := func(f float32) float32 { return float32(int(f*100)) / 100 } // this doesn't round like the fmt formatter
+	return fmt.Sprintf("%.2f:%.2f", trunc(x), trunc(y))
 }
 
 // type tree consists of a root node (and it's children) that is the parent of all subquadrants
 type Tree struct {
 	Root  *node
-	Nodes []*node
-	size  int
+	Nodes []*node // TODO: deprecate and replace with a map
+	//ValidNodes map[string]bool // TODO: if this comment and the one above is here, this and the idea above are not used
+	size int
 	*store
 	*prng.Instance
 }
@@ -167,13 +179,11 @@ func New(nodeCount int, nodeRadius float32, seed int64) *Tree {
 		Nodes:    ns,
 		size:     size,
 		store:    s,
-		Instance: prng.New(seed),
+		Instance: prng.New(seed), // TODO: pass in an instance instead
 	}
 }
 
 func (t *Tree) Partition(scale float32, amax int) {
-	//const amax = 20 // TODO: how to sync this const with the client?
-
 	var (
 		created    map[id]bool = make(map[id]bool)
 		smin, smax float32     = -scale, scale

@@ -54,8 +54,10 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 		if !n.IsAttachedToTree() {
 			l.Printf("error, detached node [%s]", n.String())
 		} else {
+			this is here to break and remind this is where i left off
 			x, y := n.Position()
-			nodestring := fmt.Sprintf("%f:%f", x, y)
+			//			nodestring := fmt.Sprintf("%f:%f", x, y)
+			nodestring := n.AsRedisKey()
 			l.Printf("adding a node: [%s] [%s]\n", n.String(), nodestring)
 			conn.Cmd("SADD", gamenodestr, nodestring)
 		}

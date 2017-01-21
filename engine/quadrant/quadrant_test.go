@@ -1,6 +1,7 @@
 package quadrant
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ func TestCreateNewTree(t *testing.T) {
 }
 
 func TestSubdividerImplementation(t *testing.T) {
-	t.Log("partition children of a quad tree into subquadrants ..")
+	t.Log("partition children of a quad tree into subquadrants ...")
 
 	var (
 		numNodes   int     = 9
@@ -51,4 +52,20 @@ func TestSubdividerImplementation(t *testing.T) {
 	}
 
 	t.Log("test compelte")
+}
+
+func TestConvertNodeToRedisKey(t *testing.T) {
+	t.Log("convert the x and y values of a node into a redis key ...")
+
+	qt := New(9, testNodeRadius, testSeed)
+	qt.Partition(testQuadrantScale, 20)
+
+	for _, n := range qt.Nodes {
+		x, y := n.Position()
+		a := fmt.Sprintf("%f:%f", x, y)
+		trunc := fmt.Sprintf("%.2f:%.2f", x, y)
+		t.Logf("actual [%s] formatted [%s] truncated [%s]", a, trunc, n.AsRedisKey())
+	}
+
+	t.Log("test complete")
 }
