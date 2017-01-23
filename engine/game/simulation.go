@@ -3,6 +3,7 @@ package game
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -16,11 +17,13 @@ type Simulation struct {
 	lookupstr string
 
 	//PlayerLeft        chan struct{}
-	PlayerJoinedEvent chan OnJoin
+	PlayerJoinedEvent      chan OnJoin
+	BroadcastPlayerToAct   chan OnTurn
+	SendTurnCompletedEvent chan OnTurn
 
 	NotifyStart chan struct{}
 	NotifyEnd   chan struct{}
-	NotifyTurn  chan int
+	NotifyTurn  chan struct{}
 	NotifyError chan error
 
 	SendMessage map[string]chan string // TODO: come up with better structure
@@ -37,7 +40,7 @@ type Simulation struct {
 	*debug.Log
 }
 
-func (s *Simulation) WaitUntilAllClientsReady() (chan struct{}, error) {
+func (s *Simulation) WaitUntilAllClientsReady() (chan struct{}, error) { // TODO: rename to ALLplayerjoined
 	go func() {
 		s.putconsole("new game started")
 
@@ -75,7 +78,7 @@ func (s *Simulation) WaitUntilAllClientsReady() (chan struct{}, error) {
 		}
 	}()
 
-	return s.NotifyStart, nil // future clients will read fom this channel to get a ready signal??
+	return s.NotifyStart, nil
 }
 
 func (s *Simulation) GetOpponent(playername string) chan string {
@@ -97,17 +100,154 @@ func (s *Simulation) GetOpponent(playername string) chan string {
 	return sendmsg
 }
 
+// SendCurrentPlayerTurn will, every interval of x, send down a channel the
+// current player's turn, anyone subscribed will get this message (note:
+// potential bugs here as once the message is read it is discarded)
+func (s *Simulation) SendCurrentPlayerTurn() {
+	go func() {
+		conn, err := s.Get()
+		if err != nil {
+			s.NotifyError <- err
+			return
+		}
+		defer s.Put(conn)
+
+		current, err := conn.Cmd("HGET", s.lookupstr, "game_player_to_act").Int()
+		if err != nil {
+			s.NotifyError <- err
+			return
+		}
+
+		for {
+			select {
+			case <-s.UpdateTick.C:
+				s.putconsole("update tick...")
+				s.putconsole(fmt.Sprintf("player to act [%d]", current))
+				current, err = conn.Cmd("HGET", s.lookupstr, "game_player_to_act").Int()
+				if err != nil {
+					s.NotifyError <- err // TODO: break or continue??
+				}
+
+				s.BroadcastPlayerToAct <- OnTurn{PlayerToAct: current}
+			}
+		}
+	}()
+}
+
+func (s *Simulation) NotifyTurnComplete(playerindex int) {
+	go func() {
+		var next int = -1
+		if playerindex == 1 {
+			next = 2
+		} else {
+			next = 1
+		}
+
+		if next == -1 {
+			s.NotifyError <- errors.New("wtf cant have -1 player index")
+		}
+
+		s.SendTurnCompletedEvent <- OnTurn{PlayerToAct: next} // TODO: create a new type for this
+		s.Cmd("HSET", s.lookupstr, "game_player_to_act", next)
+
+		s.putconsole(fmt.Sprintf("player [%d] sent turn complete to server, it is now player [%d] turn", playerindex, next))
+
+		return
+	}()
+}
+
+func (s *Simulation) NotifyPlayerTurnStart(playerindex int) chan struct{} {
+	onStart := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+			case curr := <-s.BroadcastPlayerToAct:
+				s.putconsole("read broadcast")
+				if curr.PlayerToAct == playerindex {
+					onStart <- struct{}{}
+					return
+				} else {
+					s.putconsole("not me so continue")
+				}
+			case <-s.SendTurnCompletedEvent:
+				s.putconsole("got a turn completed event so bailing out")
+				onStart <- struct{}{}
+				return
+			}
+		}
+	}()
+
+	return onStart
+}
+
+func (s *Simulation) CheckNodeValidHQ(playerindex int, nodestr string) chan bool {
+	sendvalid := make(chan bool)
+
+	s.putconsole("verify node is valid hq")
+
+	go func() {
+		nodestatstr := GameNodeStatString(s.lookupstr, nodestr)
+		s.putconsole(fmt.Sprintf("checking if node is hq [%s][%s]", s.lookupstr, nodestatstr))
+		b, err := s.Cmd("HGET", nodestatstr, "node_ishq").Str()
+		if err != nil {
+			s.NotifyError <- err
+			return
+		}
+		s.putconsole(fmt.Sprintf("result from server (before parsing) [%s]", b))
+		isHQ, err := strconv.ParseBool(b)
+		if err != nil {
+			s.NotifyError <- err
+			return
+		}
+		if isHQ {
+			s.putconsole("node is aleady hq")
+			s.putconsole("player cannot choose this node as their hq")
+			sendvalid <- false
+		} else {
+			s.putconsole("node has not been selected as an hq")
+			s.putconsole("assigning node as hq to player")
+			conn, err := s.Get()
+			if err != nil {
+				s.NotifyError <- err
+			}
+			defer s.Put(conn)
+
+			if err = conn.Cmd("MULTI").Err; err != nil {
+				s.NotifyError <- err
+				return
+			}
+
+			conn.Cmd("HSET", nodestatstr, "node_ishq", strconv.FormatBool(true))
+			conn.Cmd("HSET", nodestatstr, "node_hq_owner_by_index", playerindex)
+
+			if err = conn.Cmd("EXEC").Err; err != nil {
+				s.NotifyError <- err
+				return
+			}
+
+			sendvalid <- true
+		}
+		close(sendvalid)
+		return
+	}()
+
+	return sendvalid
+}
+
 func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Log) (*Simulation, error) {
 	sim := &Simulation{
 		gametable: gametable,
 
 		lookupstr: lookupstr,
 
-		PlayerJoinedEvent: make(chan OnJoin),
+		PlayerJoinedEvent:      make(chan OnJoin),
+		BroadcastPlayerToAct:   make(chan OnTurn),
+		SendTurnCompletedEvent: make(chan OnTurn),
 
 		NotifyStart: make(chan struct{}),
 		NotifyEnd:   make(chan struct{}),
-		NotifyTurn:  make(chan int),
+		NotifyTurn:  make(chan struct{}),
 		NotifyError: make(chan error),
 
 		StartTick:  time.NewTicker(750 * time.Millisecond),
@@ -128,6 +268,8 @@ func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Lo
 	}
 
 	sim.putconsole = putconsole
+
+	sim.SendCurrentPlayerTurn()
 
 	return sim, nil
 }

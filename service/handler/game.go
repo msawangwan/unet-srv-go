@@ -57,6 +57,11 @@ type JoinRequest struct {
 	Host       bool   `json:"host"`
 }
 
+type JoinResponse struct {
+	WorldParameters  *game.WorldParameters  `json:"worldParameters"`
+	PlayerParameters *game.PlayerParameters `json:"playerParameters"`
+}
+
 func JoinGameWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	var (
 		joinReq *JoinRequest
@@ -67,14 +72,73 @@ func JoinGameWorld(g *env.Global, w http.ResponseWriter, r *http.Request) except
 		return raiseServerError(err)
 	}
 
-	params, err := game.GetGameParameters(joinReq.GameKey, g.Pool, g.Log)
+	worldparams, err := game.GetWorldParameters(joinReq.GameKey, g.Pool, g.Log)
 	if err != nil {
 		return raiseServerError(err)
 	}
 
-	game.Join(joinReq.GameKey, joinReq.PlayerName, g.Pool, g.Log)
+	pid, err := g.KeyManager.GenerateNextPlayerID()
+	if err != nil {
+		return raiseServerError(err)
+	}
 
-	json.NewEncoder(w).Encode(params)
+	playerparams, err := game.Join(joinReq.GameKey, *pid, joinReq.PlayerName, g.Pool, g.Log)
+	if err != nil {
+		return raiseServerError(err)
+	}
 
+	json.NewEncoder(w).Encode(
+		&JoinResponse{
+			WorldParameters:  worldparams,
+			PlayerParameters: playerparams,
+		},
+	)
+
+	return nil
+}
+
+type CheckNodeHQRequest struct {
+	GameID      int    `json:"gameID"`
+	PlayerIndex int    `json:"playerIndex"`
+	NodeString  string `json:"nodeString"`
+}
+
+// game/world/player/hq/validation
+func ValidateHQChoice(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	var cnhq *CheckNodeHQRequest
+
+	err := json.NewDecoder(r.Body).Decode(&cnhq)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	sim, err := g.Games.Get(game.GameLookupString((cnhq.GameID)))
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	var isHQValid bool = false
+
+	querychan := sim.CheckNodeValidHQ(cnhq.PlayerIndex, cnhq.NodeString)
+	select {
+	case b := <-querychan:
+		isHQValid = b
+	case err = <-sim.NotifyError:
+		return raiseServerError(err)
+	}
+
+	json.NewEncoder(w).Encode(
+		struct {
+			Value bool `json:"value"`
+		}{
+			Value: isHQValid,
+		},
+	)
+
+	return nil
+}
+
+// game/world/player/signal/ready
+func PlayerSentReadySignal(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
 	return nil
 }

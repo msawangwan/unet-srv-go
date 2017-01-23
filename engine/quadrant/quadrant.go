@@ -125,9 +125,11 @@ func (n *node) tryInsert(other *node) {
 	}
 }
 
-func (n *node) Position() (float32, float32) { return n.x, n.y }
-func (n *node) IsAttachedToTree() bool       { return n.attached }
-func (n *node) AsRedisKey() string           { return forgeRedisKey(n.x, n.y) }
+func (n *node) Position() (float32, float32)       { return n.x, n.y }
+func (n *node) IsAttachedToTree() bool             { return n.attached }
+func (n *node) FormatComponents() (string, string) { return formatXY(n.x, n.y) }
+func (n *node) AsFormattedKey() string             { return fmt.Sprintf("%f:%f", n.x, n.y) }
+func (n *node) AsRedisKey() string                 { return forgeRedisKey(n.x, n.y) }
 
 func (n *node) String() string {
 	return fmt.Sprintf("node [%s] id [%d] depth [%d]", n.point, n.id, n.depth)
@@ -136,9 +138,18 @@ func (n *node) String() string {
 // ForgeRedisKey exports forgeRedisKey()
 func ForgeRedisKey(x, y float32) string { return forgeRedisKey(x, y) }
 
+// FormatXY returns two xy truncated strings, exports  formatXY()
+func FormatXY(x, y float32) (string, string) { return formatXY(x, y) }
+
+var trunc = func(f float32) float32 { return float32(int(f*100)) / 100 } // truncates up to 2 places (without rounding)
+
 func forgeRedisKey(x, y float32) string {
-	trunc := func(f float32) float32 { return float32(int(f*100)) / 100 } // this doesn't round like the fmt formatter
+	//trunc := func(f float32) float32 { return float32(int(f*100)) / 100 } // this doesn't round like the fmt formatter
 	return fmt.Sprintf("%.2f:%.2f", trunc(x), trunc(y))
+}
+
+func formatXY(x, y float32) (string, string) {
+	return fmt.Sprintf("%.2f", trunc(x)), fmt.Sprintf("%.2f", trunc(y))
 }
 
 // type tree consists of a root node (and it's children) that is the parent of all subquadrants

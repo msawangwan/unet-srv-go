@@ -5,21 +5,16 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-// key format
-// [category]:[label]:[info]
-
-// hash key
 const (
-	// key db
 	hk_idDispenser = "keys:generated"
 )
 
 // hash fields
 const (
-	// key db fields
 	hf_clientHandleID   = "client_handle_current_key"
 	hf_sessionHandleKey = "session_handle_current_key"
 	hf_gameHandleID     = "game_handle_current_key"
+	hf_playerID         = "player_id_current_key"
 )
 
 // KeyGenerator retrieves assignable keys from the redis store
@@ -76,6 +71,20 @@ func (kgen *KeyGenerator) GenerateNextGameID() (*int, error) {
 	defer kgen.PrefixReset()
 
 	n, err := kgen.Cmd("HINCRBY", hk_idDispenser, hf_gameHandleID, 1).Int()
+	if err != nil {
+		return nil, err
+	}
+
+	kgen.printGeneratedKey(n)
+
+	return &n, nil
+}
+
+func (kgen *KeyGenerator) GenerateNextPlayerID() (*int, error) {
+	kgen.Prefix("game", "keygen", "playerid")
+	defer kgen.PrefixReset()
+
+	n, err := kgen.Cmd("HINCRBY", hk_idDispenser, hf_playerID, 1).Int()
 	if err != nil {
 		return nil, err
 	}

@@ -10,8 +10,12 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
-func GameNodeString(gamelookupstr string) string {
+func GameValidNodeString(gamelookupstr string) string {
 	return fmt.Sprintf("%s:%s", gamelookupstr, "nodes")
+}
+
+func GameNodeStatString(gamelookupstr, nodestr string) string {
+	return fmt.Sprintf("%s:%s", gamelookupstr, nodestr)
 }
 
 func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p *pool.Pool, l *debug.Log) error {
@@ -27,7 +31,7 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 
 	gamelookupstr := GameLookupString(gameid)
 	gameparamstr := GameParamString(gamelookupstr)
-	gamenodestr := GameNodeString(gamelookupstr)
+	gamevalidnodememberstr := GameValidNodeString(gamelookupstr)
 
 	seedp, err := GetSeed(gameid, p, l)
 	if err != nil {
@@ -54,12 +58,15 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 		if !n.IsAttachedToTree() {
 			l.Printf("error, detached node [%s]", n.String())
 		} else {
-			this is here to break and remind this is where i left off
-			x, y := n.Position()
-			//			nodestring := fmt.Sprintf("%f:%f", x, y)
-			nodestring := n.AsRedisKey()
-			l.Printf("adding a node: [%s] [%s]\n", n.String(), nodestring)
-			conn.Cmd("SADD", gamenodestr, nodestring)
+			x, y := n.FormatComponents()
+
+			nodevalidstr := n.AsRedisKey()
+			nodestatstr := GameNodeStatString(gamelookupstr, nodevalidstr)
+
+			conn.Cmd("SADD", gamevalidnodememberstr, nodevalidstr)
+			conn.Cmd("HMSET", nodestatstr, "node_key", nodevalidstr, "node_x", x, "node_y", y, "node_ishq", "false") // create a hashtable for EACH node
+
+			l.Printf("adding a node: [%s]\n", nodevalidstr)
 		}
 	}
 
@@ -98,7 +105,7 @@ func GetSeed(gameid int, p *pool.Pool, l *debug.Log) (*int64, error) {
 	return &seed, nil
 }
 
-type GameParameters struct {
+type WorldParameters struct {
 	NodeCount        int     `json:"nodeCount"`
 	NodeSpawnAttempt int     `json:"nodeMaxSpawnAttempts"`
 	NodeRadius       float32 `json:"nodeRadius"`
@@ -106,8 +113,8 @@ type GameParameters struct {
 	Seed             int64   `json:"worldSeed"`
 }
 
-func GetGameParameters(gameid int, p *pool.Pool, l *debug.Log) (*GameParameters, error) {
-	var params *GameParameters = &GameParameters{}
+func GetWorldParameters(gameid int, p *pool.Pool, l *debug.Log) (*WorldParameters, error) {
+	var params *WorldParameters = &WorldParameters{}
 
 	// fields: node_count, world_scale, node_radius, max_spawn_attempts, world_seed
 	m, err := p.Cmd("HGETALL", GameParamString(GameLookupString(gameid))).Map()

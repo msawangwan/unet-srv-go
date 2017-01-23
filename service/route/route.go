@@ -73,6 +73,26 @@ func NewRouteTable(globals *env.Global) *Table {
 				Pattern: cache("game/world/join"),
 				Handler: resource.Context{globals, handler.JoinGameWorld},
 			},
+			"game/world/player/signal/ready": &route{
+				Method:  "POST",
+				Pattern: cache("game/world/player/signal/ready"),
+				Handler: resource.Context{globals, handler.PlayerSentReadySignal},
+			},
+			"game/world/player/hq/validation": &route{
+				Method:  "POST",
+				Pattern: cache("game/world/player/hq/validation"),
+				Handler: resource.Context{globals, handler.ValidateHQChoice},
+			},
+			"game/turn/poll": &route{
+				Method:  "POST",
+				Pattern: cache("game/turn/poll"),
+				Handler: resource.Context{globals, handler.PollForTurnSignal},
+			},
+			"game/turn/complete": &route{
+				Method:  "POST",
+				Pattern: cache("game/turn/complete"),
+				Handler: resource.Context{globals, handler.GotPlayerTurnComplete},
+			},
 			"poll/start": &route{
 				Method:  "POST",
 				Pattern: cache("poll/start"),

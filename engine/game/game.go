@@ -25,6 +25,11 @@ func GamePlayerListString(gamelookupstr string) string {
 	return fmt.Sprintf("%s:%s", gamelookupstr, "playerlist")
 }
 
+// a key formatted as example: "game:0:player:1"
+func GamePlayerNString(gamelookupstr string, index int) string {
+	return fmt.Sprintf("%s:player:%d", gamelookupstr, index)
+}
+
 // LoadNew loads a new game given a gamename and gameid
 func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) (*string, error) {
 	gamelookupstr := GameLookupString(gameid)
@@ -56,7 +61,7 @@ func CreateNewGame(gamename string, gameid int, p *pool.Pool, l *debug.Log) (*st
 	l.Prefix("game", "createnew")
 	l.Printf("loading a new game [gamename: %s][lookup key: %s][seed: %s] ...", gamename, gameparamstr, seedstring)
 
-	conn.Cmd("HMSET", gamelookupstr, "game_id", idstring, "game_name", gamename)
+	conn.Cmd("HMSET", gamelookupstr, "game_id", idstring, "game_name", gamename, "game_turn_number", -1, "game_player_to_act", 1)
 	conn.Cmd("HMSET", gameparamstr, "game_id", idstring, "world_seed", seedstring, "has_started", hasstartedstr)
 
 	return &gamelookupstr, nil
@@ -76,12 +81,18 @@ func GetExistingGameByID(gamename string, p *pool.Pool, l *debug.Log) (*int, err
 	return &gameid, nil
 }
 
-func Join(gameid int, playername string, p *pool.Pool, l *debug.Log) error {
-	gameplayerliststring := GamePlayerListString(GameLookupString(gameid))
+type PlayerParameters struct {
+	ID    int `json:"id"`
+	Index int `json:"index"`
+}
+
+func Join(gameid int, playerid int, playername string, p *pool.Pool, l *debug.Log) (*PlayerParameters, error) {
+	gamelookupstr := GameLookupString(gameid)
+	gameplayerliststring := GamePlayerListString(gamelookupstr)
 
 	conn, err := p.Get()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer func() {
@@ -91,16 +102,24 @@ func Join(gameid int, playername string, p *pool.Pool, l *debug.Log) error {
 
 	ismem, err := conn.Cmd("SISMEMBER", gameplayerliststring, playername).Int()
 	if err != nil {
-		return err
+		return nil, err
 	} else if ismem == 1 {
-		return errors.New("player already in-game")
+		return nil, errors.New("player already in-game")
 	}
 
 	conn.Cmd("SADD", gameplayerliststring, playername)
 
+	index, err := conn.Cmd("SCARD", gameplayerliststring).Int()
+	if err != nil {
+		return nil, err
+	}
+
+	gameplayerstring := GamePlayerNString(gamelookupstr, index)
+	conn.Cmd("HMSET", gameplayerstring, "player_name", playername, "player_id", playerid, "player_index", index)
+
 	allplayers, err := conn.Cmd("SMEMBERS", gameplayerliststring).List()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	l.Prefix("game", "join")
@@ -110,7 +129,7 @@ func Join(gameid int, playername string, p *pool.Pool, l *debug.Log) error {
 		l.Printf("%d) %s\n", i, player)
 	}
 
-	return nil
+	return &PlayerParameters{index, playerid}, nil
 }
 
 // GenerateSeed returns a new simulation game world seed

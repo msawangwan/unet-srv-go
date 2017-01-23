@@ -7,3 +7,8 @@ type Action interface {
 type OnJoin struct {
 	PlayerName string
 }
+
+type OnTurn struct {
+	TurnNumber  int
+	PlayerToAct int
+}

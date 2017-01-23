@@ -11,8 +11,8 @@ import (
 )
 
 type PlayerReadyNotification struct {
-	GameID     int
-	PlayerName string
+	GameID     int    `json:"gameID"`
+	PlayerName string `json:"playerName"`
 }
 
 // PollStart : poll/start
@@ -51,6 +51,57 @@ func PollStart(g *env.Global, w http.ResponseWriter, r *http.Request) exception.
 			Value: opponent,
 		},
 	)
+
+	return nil
+}
+
+type PlayerTurnPollRequest struct {
+	GameID      int `json:"gameID"`
+	PlayerIndex int `json"playerIndex"`
+}
+
+// game/turn/poll
+func PollForTurnSignal(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	var ptpr *PlayerTurnPollRequest
+
+	err := json.NewDecoder(r.Body).Decode(&ptpr)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	gamelookupstr := game.GameLookupString(ptpr.GameID)
+
+	sim, err := g.Games.Get(gamelookupstr)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	<-sim.NotifyPlayerTurnStart(ptpr.PlayerIndex) // block until we get note to go
+
+	return nil
+}
+
+type PlayerNotifyServer struct {
+	GameID      int `json:"gameID"`
+	PlayerIndex int `json:"playerIndex"`
+}
+
+// game/turn/complete
+func GotPlayerTurnComplete(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	var pns *PlayerNotifyServer
+	err := json.NewDecoder(r.Body).Decode(&pns)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	gamelookupstr := game.GameLookupString(pns.GameID)
+
+	sim, err := g.Games.Get(gamelookupstr)
+	if err != nil {
+		return raiseServerError(err)
+	}
+
+	sim.NotifyTurnComplete(pns.PlayerIndex)
 
 	return nil
 }
