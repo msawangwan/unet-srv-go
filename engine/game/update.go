@@ -51,7 +51,7 @@ func (uh *UpdateHandler) Run() {
 // Monitor prints and logs game engine stats, must be run via goroutine
 func (uh *UpdateHandler) Monitor() {
 	var (
-		interval = 2500 * time.Millisecond
+		interval = 10000 * time.Millisecond
 
 		active int
 		avail  int

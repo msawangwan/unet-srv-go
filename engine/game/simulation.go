@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	//"strings"
 	"sync"
 	"time"
 
 	"github.com/mediocregopher/radix.v2/pool"
+	"github.com/mediocregopher/radix.v2/redis"
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
@@ -186,16 +188,26 @@ func (s *Simulation) CheckNodeValidHQ(playerindex int, nodestr string) chan bool
 
 	s.putconsole("verify node is valid hq")
 
-	go func() {
+	go func() { // check for truncated 0's after the decimal! we do this on the client only right now
 		nodestatstr := GameNodeStatString(s.lookupstr, nodestr)
 		s.putconsole(fmt.Sprintf("checking if node is hq [%s][%s]", s.lookupstr, nodestatstr))
-		b, err := s.Cmd("HGET", nodestatstr, "node_ishq").Str()
-		if err != nil {
-			s.NotifyError <- err
+		b := s.Cmd("HGET", nodestatstr, "node_ishq")
+		if b.Err != nil {
+			s.NotifyError <- b.Err
+			return
+		} else if b.IsType(redis.Nil) {
+			s.putconsole("that's not a valid node")
+			sendvalid <- false
 			return
 		}
-		s.putconsole(fmt.Sprintf("result from server (before parsing) [%s]", b))
-		isHQ, err := strconv.ParseBool(b)
+
+		result, err := b.Str()
+		if err != nil {
+			s.NotifyError <- err
+		}
+
+		s.putconsole(fmt.Sprintf("result from server (before parsing) [%s]", result))
+		isHQ, err := strconv.ParseBool(result)
 		if err != nil {
 			s.NotifyError <- err
 			return
@@ -220,6 +232,7 @@ func (s *Simulation) CheckNodeValidHQ(playerindex int, nodestr string) chan bool
 
 			conn.Cmd("HSET", nodestatstr, "node_ishq", strconv.FormatBool(true))
 			conn.Cmd("HSET", nodestatstr, "node_hq_owner_by_index", playerindex)
+			conn.Cmd("HSET", GamePlayerNString(s.lookupstr, playerindex), "player_hq", nodestatstr)
 
 			if err = conn.Cmd("EXEC").Err; err != nil {
 				s.NotifyError <- err

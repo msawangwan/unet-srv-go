@@ -156,8 +156,7 @@ func formatXY(x, y float32) (string, string) {
 type Tree struct {
 	Root  *node
 	Nodes []*node // TODO: deprecate and replace with a map
-	//ValidNodes map[string]bool // TODO: if this comment and the one above is here, this and the idea above are not used
-	size int
+	size  int
 	*store
 	*prng.Instance
 }
