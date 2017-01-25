@@ -38,8 +38,8 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 
 	// TODO: fix the logging here
-	mux.Prefix("gateway", "multiplexer")
-	defer mux.PrefixReset()
+	//mux.Prefix("gateway", "multiplexer")
+	//defer mux.PrefixReset()
 
 	ps := strings.Split(resource, "/")
 
@@ -49,6 +49,8 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				rps := strings.Split(path, "/") // TODO: this might be too slow
 				if rps[len(rps)-1] == ps[len(ps)-1] {
 					foundRoute = true
+					mux.Label(2, "gateway", "access")
+					defer mux.PrefixReset()
 					mux.Printf("found route: %s\n", resource)
 					mux.Printf("serving resource at endpoint: %s\n", rps[len(rps)-1])
 					route.Handler.ServeHTTP(w, r)
@@ -59,6 +61,8 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !foundRoute {
+		mux.Label(4, "gateway", "failedaccess")
+		defer mux.PrefixReset()
 		mux.Printf("invalid request: %s\n", resource)
 	}
 }

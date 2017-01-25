@@ -18,7 +18,8 @@ func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Prefix("context", "resource", "serveroute")
 
 	defer func() {
-		c.PrefixError("context", "resource", "fatal")
+		//c.PrefixError("context", "resource", "fatal")
+		c.Label(5, "context", "resource", "fatal")
 		c.SetLevelVerbose()
 
 		if err := recover(); err != nil {
