@@ -51,7 +51,7 @@ func (uh *UpdateHandler) Run() {
 // Monitor prints and logs game engine stats, must be run via goroutine
 func (uh *UpdateHandler) Monitor() {
 	var (
-		interval = 10000 * time.Millisecond
+		interval = 2500 * time.Millisecond // TODO: get from config
 
 		active int
 		avail  int
@@ -70,7 +70,7 @@ func (uh *UpdateHandler) Monitor() {
 	for {
 		select {
 		case <-uh.kill:
-			uh.Prefix("update", "monitor")
+			uh.Label(0, "update", "status")
 			uh.Printf("terminated, running cleanup (use ctrl+c to exit) ...\n")
 			uh.Printf("WARNING: database has been flushed due to running in debug mode")
 			uh.PrefixReset()
@@ -87,19 +87,15 @@ func (uh *UpdateHandler) Monitor() {
 			active = runtime.NumGoroutine()
 			avail = uh.Avail()
 
-			// TODO: implement some sort of backoff
-			uh.Prefix("update", "monitor")
-			if active == lastactive && avail == lastavail {
-				uh.Printf("no change in goroutine or redis conn count, increasing interval (not implemented yet)")
-				//interval += 2000
-			} else {
-				uh.Printf("reset interval (not implemented yet)")
-				lastactive = active
-				lastavail = avail
-				//interval = 2000
+			// TODO: increase/decrease interval based on RoC
+			if active != lastactive || avail != lastavail {
+				uh.Label(0, "update", "status")
+				uh.Printf("goroutine count: [%d] available redis conns [%d]\n", active, avail)
+				uh.PrefixReset()
 			}
-			uh.Printf("goroutine count: [%d] available redis conns [%d]\n", active, avail)
-			uh.PrefixReset()
+
+			lastactive = active
+			lastavail = avail
 		}
 	}
 }
