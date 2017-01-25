@@ -43,7 +43,7 @@ const (
 )
 
 const (
-	colw = 20 // TODO: default column width, from config
+	colw = 40 // TODO: default column width, from config
 )
 
 var (
@@ -51,6 +51,18 @@ var (
 )
 
 func (l *Log) Prefix(p ...string) {
+	var (
+		ps string
+	)
+
+	for _, pf := range p {
+		ps = ps + "|" + strings.ToUpper(pf) + "|"
+	}
+
+	l.SetPrefix(fmt.Sprintf(consoleStyle, color_blue, ps, color_reset))
+}
+
+func (l *Log) PrefixError(p ...string) {
 	var (
 		ps string
 	)

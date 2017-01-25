@@ -1,0 +1,13 @@
+{
+  "type":"unit",
+  "name":"node",
+  "properties": [
+	"name", "capacity", "deployCost", "moveCost","attackPenalty","info"
+	]
+}
+
+{
+  "type":"",
+  "name":"",
+  "properties": []
+}
