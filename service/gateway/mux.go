@@ -37,6 +37,7 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		resource   string = r.URL.Path
 	)
 
+	// TODO: fix the logging here
 	mux.Prefix("gateway", "multiplexer")
 	defer mux.PrefixReset()
 

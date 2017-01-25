@@ -12,6 +12,9 @@ func TestPutColors(t *testing.T) {
 		fmt.Sprintf("%sgreen%s", color_green, color_reset),
 		fmt.Sprintf("%syellow%s", color_yellow, color_reset),
 		fmt.Sprintf("%sblue%s", color_blue, color_reset),
+		fmt.Sprintf("%smagenta%s", color_magenta, color_reset),
+		fmt.Sprintf("%scyan%s", color_cyan, color_reset),
+		fmt.Sprintf("%sgray%s", color_gray, color_reset),
 		fmt.Sprintf("%swhite%s", color_white, color_reset),
 	}
 

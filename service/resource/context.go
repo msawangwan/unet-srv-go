@@ -18,7 +18,7 @@ func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Prefix("context", "resource", "serveroute")
 
 	defer func() {
-		c.Prefix("context", "resource", "fatal")
+		c.PrefixError("context", "resource", "fatal")
 		c.SetLevelVerbose()
 
 		if err := recover(); err != nil {
@@ -33,7 +33,7 @@ func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Printf("calling handler mapped to: %s", r.URL.Path)
 
 	if e := c.Handle(c.Global, w, r); e != nil {
-		c.Prefix("context", "resource", "error")
+		c.PrefixError("context", "resource", "error")
 		c.Printf("%s", e.Print())
 		c.PrefixReset()
 	}
