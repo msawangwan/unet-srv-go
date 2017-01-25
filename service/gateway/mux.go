@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"io"
 	"strings"
 
 	"net/http"
@@ -37,12 +38,9 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		resource   string = r.URL.Path
 	)
 
-	// TODO: fix the logging here
-	//mux.Prefix("gateway", "multiplexer")
-	//defer mux.PrefixReset()
-
 	ps := strings.Split(resource, "/")
 
+	// TODO: fix the logging here
 	for path, route := range mux.Endpoints {
 		if route.Pattern.MatchString(resource) == true {
 			if route.Method == r.Method {
@@ -60,9 +58,12 @@ func (mux *Multiplexer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// TODO: do something to terminate the conn as this causes goroutines to linger if no cleanup is done
 	if !foundRoute {
 		mux.Label(4, "gateway", "failedaccess")
 		defer mux.PrefixReset()
 		mux.Printf("invalid request: %s\n", resource)
+		io.WriteString(w, "access denied")
+		//r.Body.Close()
 	}
 }
