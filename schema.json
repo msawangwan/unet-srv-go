@@ -1,13 +1,18 @@
 {
-  "type":"unit",
-  "name":"node",
-  "properties": [
-	"name", "capacity", "deployCost", "moveCost","attackPenalty","info"
-	]
-}
-
-{
-  "type":"",
-  "name":"",
-  "properties": []
+  "schemas" : {
+	"world_position_node": {
+	  "label":"node",
+	  "type":"unit",
+	  "category":"npc",
+	  "properties": [ "name", "capacity", "deployCost", "moveCost","attackPenalty","info" ],
+	  "playerOwned": false
+	},
+	"player_ship": {
+	  "label":"ship",
+	  "type":"unit",
+	  "category":"npc",
+	  "properties": [ "name", "type", "spawnCost", "moveSpeed", "attackDamage", "armor", "shield" ],
+	  "playerOwned": true
+	}
+  }
 }

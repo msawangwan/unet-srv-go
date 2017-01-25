@@ -11,40 +11,73 @@ import (
 	"encoding/json"
 )
 
-type Type string
 type Name string
+type Label string
+type Type string
+type Category string
+
 type Properties []string
 
-const (
-	type_unit   Type = "unit"
-	type_player Type = "player"
-)
+type PlayerOwned bool
 
-type NodeData struct {
-	Datatype       Type       `json:"type"`
-	Dataname       Name       `json:"name"`
-	Dataproperties Properties `json:"properties"`
+func (po PlayerOwned) String() string {
+	var phrase string = "player owned: "
+	if po {
+		return fmt.Sprintf("%s%s", phrase, "true")
+	}
+	return fmt.Sprintf("%s%s", phrase, "false")
 }
 
-func LoadGameDataFile(fn string) error {
+type Schema struct {
+	DataLabel       Label       `json:"label"`
+	DataType        Type        `json:"type"`
+	DataCategory    Category    `json:"category"`
+	DataProperties  Properties  `json:"properties"`
+	DataPlayerOwned PlayerOwned `json:"playerOwned"`
+}
+
+type Schemas map[Name]Schema
+
+type SchemaCache struct {
+	Schemas `json:"schemas"`
+}
+
+func (sc *SchemaCache) PrettyPrint() string {
+	var s string = ""
+	put := func(str interface{}) { s = s + fmt.Sprintf("%v\n", str) }
+	for k, v := range sc.Schemas {
+		put("*** " + k + " ***")
+		put("\t" + "label: " + v.DataLabel)
+		put("\t" + "type: " + v.DataType)
+		put("\t" + "cat: " + v.DataCategory)
+		put("\t" + v.DataPlayerOwned.String())
+		put("\t" + "properties: ")
+		for _, e := range v.DataProperties {
+			put("\t\t" + e)
+		}
+	}
+	return s
+}
+
+func MarshallSchema(fn string) (*SchemaCache, error) {
 	if !strings.HasSuffix(fn, ".json") {
-		return errors.New("data file not a json file")
+		return nil, errors.New("data file not a json file")
 	}
 
 	f, err := os.Open(fn)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer f.Close()
 
-	var nd NodeData
+	var s SchemaCache
 
-	err = json.NewDecoder(f).Decode(&nd)
+	err = json.NewDecoder(f).Decode(&s)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &s, nil
 }
 
 func debugPrintDataFileByLine(fn string) error {

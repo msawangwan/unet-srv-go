@@ -5,14 +5,30 @@ import (
 	"testing"
 )
 
-func TestCustomStringTypes(t *testing.T) {
-	var path = "../data.json"
+var path = "../schema.json"
 
-	err := LoadGameDataFile(path)
+func TestDoesPrettyPrintingWork(t *testing.T) {
+
+	s, err := MarshallSchema(path)
 	if err != nil {
-		//	t.Errorf("%s", err)
 		if err != io.EOF {
-			t.Errorf("something other than eof err: %s", err)
+			t.Errorf("ERR: %s", err)
+		}
+	}
+	t.Logf("\n%s", s.PrettyPrint())
+}
+
+func TestGetASpecifictype(t *testing.T) {
+	s, err := MarshallSchema(path)
+	if err != nil {
+		if err != io.EOF {
+			t.Errorf("ERR:: %s", err)
+		}
+	}
+
+	for k, v := range s.Schemas {
+		if k == "world_position_node" {
+			t.Logf("\n%v", v)
 		}
 	}
 }
