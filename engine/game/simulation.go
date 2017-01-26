@@ -46,19 +46,13 @@ type Simulation struct {
 }
 
 func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Log) (*Simulation, error) {
-	var maxplayerspergame int = 2 // TODO: load from config.json or params.json
+	const (
+		maxplayerspergame = 2 // TODO: load from config.json or params.json
+	)
 
-	worldseedstr, err := p.Cmd("HGET", lookupstr, "world_seed").Str()
-	if err != nil {
-		return nil, err
-	}
+	worldseed, err := GetWorldSeed(lookupstr, p)
 
-	worldseed, err := strconv.ParseInt(worldseedstr, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	rand, err := prng.NewInstanceManager(maxplayerspergame, worldseed)
+	rand, err := prng.NewInstanceManager(maxplayerspergame, *worldseed)
 	if err != nil {
 		return nil, err
 	}

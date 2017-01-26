@@ -33,7 +33,7 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 	gameparamstr := GameParamString(gamelookupstr)
 	gamevalidnodememberstr := GameValidNodeString(gamelookupstr)
 
-	seedp, err := GetSeed(gameid, p, l)
+	seedp, err := GetWorldSeed(gamelookupstr, p)
 	if err != nil {
 		return err
 	}
@@ -79,31 +79,17 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 	return nil
 }
 
-// TODO: don't need this??? was before we were getting all params
-// TODO: DEPRECATE
-func GetSeed(gameid int, p *pool.Pool, l *debug.Log) (*int64, error) {
-	conn, err := p.Get()
-	if err != nil {
-		return nil, err
+// GetWorldSeed hits the redis db and returns the world seed given a game string
+func GetWorldSeed(gamelookupstr string, p *pool.Pool) (*int64, error) {
+	ss, e := p.Cmd("HGET", gamelookupstr, "world_seed").Str()
+	if e != nil {
+		return nil, e
 	}
-
-	defer func() {
-		p.Put(conn)
-	}()
-
-	gameparamstr := GameParamString(GameLookupString(gameid))
-
-	seedstring, err := conn.Cmd("HGET", gameparamstr, "world_seed").Str()
-	if err != nil {
-		return nil, err
+	ws, e := strconv.ParseInt(ss, 10, 64)
+	if e != nil {
+		return nil, e
 	}
-
-	seed, err := strconv.ParseInt(seedstring, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-
-	return &seed, nil
+	return &ws, nil
 }
 
 type WorldParameters struct {
