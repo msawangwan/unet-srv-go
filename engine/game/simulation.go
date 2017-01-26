@@ -39,7 +39,8 @@ type Simulation struct {
 
 	putconsole func(stdout string)
 
-	numbers *prng.Instance
+	//numbers *prng.Instance
+	numbers *prng.Manager
 
 	*pool.Pool
 	*debug.Log
