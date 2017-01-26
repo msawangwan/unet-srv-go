@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	"encoding/json"
 )
@@ -40,6 +41,18 @@ type Schemas map[Name]Schema
 
 type SchemaCache struct {
 	Schemas `json:"schemas"`
+	sync.Mutex
+}
+
+func (sc *SchemaCache) Access(n string) (*Schema, error) {
+	sc.Lock()
+	defer sc.Unlock()
+
+	if s, e := sc.Schemas[Name(n)]; e {
+		return &s, nil
+	}
+
+	return nil, errors.New("no schema with that name exists")
 }
 
 func (sc *SchemaCache) PrettyPrint() string {
