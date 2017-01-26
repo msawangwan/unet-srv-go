@@ -39,11 +39,68 @@ type Simulation struct {
 
 	putconsole func(stdout string)
 
-	//numbers *prng.Instance
-	numbers *prng.Manager
+	rand *prng.Manager
 
 	*pool.Pool
 	*debug.Log
+}
+
+func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Log) (*Simulation, error) {
+	var maxplayerspergame int = 2 // TODO: load from config.json or params.json
+
+	worldseedstr, err := p.Cmd("HGET", lookupstr, "world_seed").Str()
+	if err != nil {
+		return nil, err
+	}
+
+	worldseed, err := strconv.ParseInt(worldseedstr, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	rand, err := prng.NewInstanceManager(maxplayerspergame, worldseed)
+	if err != nil {
+		return nil, err
+	}
+
+	sim := &Simulation{
+		gametable: gametable,
+
+		lookupstr: lookupstr,
+
+		PlayerJoinedEvent:      make(chan OnJoin),
+		BroadcastPlayerToAct:   make(chan OnTurn),
+		SendTurnCompletedEvent: make(chan OnTurn),
+
+		NotifyStart: make(chan struct{}),
+		NotifyEnd:   make(chan struct{}),
+		NotifyTurn:  make(chan struct{}),
+		NotifyError: make(chan error),
+
+		StartTick:  time.NewTicker(750 * time.Millisecond),
+		UpdateTick: time.NewTicker(2500 * time.Millisecond),
+
+		SendMessage: make(map[string]chan string),
+
+		playercount: 0,
+
+		rand: rand,
+
+		Pool: p,
+		Log:  l,
+	}
+
+	putconsole := func(msg string) {
+		sim.Prefix("simulation", sim.lookupstr)
+		sim.Printf("[%s] %s", sim.lookupstr, msg)
+		sim.PrefixReset()
+	}
+
+	sim.putconsole = putconsole
+
+	sim.SendCurrentPlayerTurn()
+
+	return sim, nil
 }
 
 func (s *Simulation) WaitUntilAllClientsReady() (chan struct{}, error) { // TODO: rename to ALLplayerjoined
@@ -250,45 +307,6 @@ func (s *Simulation) CheckNodeValidHQ(playerindex int, nodestr string) chan bool
 	}()
 
 	return sendvalid
-}
-
-func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Log) (*Simulation, error) {
-	sim := &Simulation{
-		gametable: gametable,
-
-		lookupstr: lookupstr,
-
-		PlayerJoinedEvent:      make(chan OnJoin),
-		BroadcastPlayerToAct:   make(chan OnTurn),
-		SendTurnCompletedEvent: make(chan OnTurn),
-
-		NotifyStart: make(chan struct{}),
-		NotifyEnd:   make(chan struct{}),
-		NotifyTurn:  make(chan struct{}),
-		NotifyError: make(chan error),
-
-		StartTick:  time.NewTicker(750 * time.Millisecond),
-		UpdateTick: time.NewTicker(2500 * time.Millisecond),
-
-		SendMessage: make(map[string]chan string),
-
-		playercount: 0,
-
-		Pool: p,
-		Log:  l,
-	}
-
-	putconsole := func(msg string) {
-		sim.Prefix("simulation", sim.lookupstr)
-		sim.Printf("[%s] %s", sim.lookupstr, msg)
-		sim.PrefixReset()
-	}
-
-	sim.putconsole = putconsole
-
-	sim.SendCurrentPlayerTurn()
-
-	return sim, nil
 }
 
 type Table struct {

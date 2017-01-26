@@ -80,6 +80,7 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 }
 
 // TODO: don't need this??? was before we were getting all params
+// TODO: DEPRECATE
 func GetSeed(gameid int, p *pool.Pool, l *debug.Log) (*int64, error) {
 	conn, err := p.Get()
 	if err != nil {

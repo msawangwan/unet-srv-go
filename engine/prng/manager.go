@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// Manager wraps and manages a prng instances
+// Manager wraps and manages prng instances
 type Manager struct {
 	WorldInstance  *Instance         // use for things like world generation
 	PlayerInstance map[int]*Instance // by player index
