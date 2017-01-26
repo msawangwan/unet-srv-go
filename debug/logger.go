@@ -65,6 +65,7 @@ var (
 	consoleStyle = setStyleWidth(colw)
 )
 
+// TODO: DEPRECATED
 func (l *Log) Prefix(p ...string) {
 	var (
 		ps string
@@ -77,6 +78,7 @@ func (l *Log) Prefix(p ...string) {
 	l.SetPrefix(fmt.Sprintf(consoleStyle, color_blue, ps, color_reset))
 }
 
+// TODO: DEPRECATED
 func (l *Log) PrefixError(p ...string) {
 	var (
 		ps string
@@ -87,6 +89,11 @@ func (l *Log) PrefixError(p ...string) {
 	}
 
 	l.SetPrefix(fmt.Sprintf(consoleStyle, color_red, ps, color_reset))
+}
+
+// TODO: DEPRECATE
+func (l *Log) PrefixReset() {
+	l.SetPrefix(fmt.Sprintf(consoleStyle, color_reset, "DEBUG", color_reset))
 }
 
 func (l *Log) Label(lvl level, p ...string) {
@@ -116,25 +123,24 @@ func (l *Log) Label(lvl level, p ...string) {
 	l.SetPrefix(fmt.Sprintf(consoleStyle, color, ps, color_reset))
 }
 
-func (l *Log) PrefixSetWidth(w int, p ...string) {
-	consoleStyle = setStyleWidth(w)
-	l.Prefix(p...)
-}
-
-func (l *Log) PrefixReset() {
+func (l *Log) ClearLabel() {
 	l.SetPrefix(fmt.Sprintf(consoleStyle, color_reset, "DEBUG", color_reset))
 }
 
-func (l *Log) SetLevelDefault() {
-	l.SetFlags(log.Ldate | log.Ltime)
+func (l *Log) Level(lvl level) {
+	switch lvl {
+	case DEBUG:
+		l.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	case VERBOSE:
+		l.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+	default:
+		l.SetFlags(log.Ldate | log.Ltime)
+	}
 }
 
-func (l *Log) SetLevelDebug() {
-	l.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
-}
-
-func (l *Log) SetLevelVerbose() {
-	l.SetFlags(log.Ldate | log.Ltime | log.Llongfile)
+func (l *Log) PrefixSetWidth(w int, lvl level, p ...string) {
+	consoleStyle = setStyleWidth(w)
+	l.Label(lvl, p...)
 }
 
 func setStyleWidth(w int) string {

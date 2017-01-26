@@ -58,7 +58,7 @@ func main() {
 		log.Fatal("error setting up logger")
 	}
 
-	logger.PrefixSetWidth(10, "MAIN", "INIT")
+	logger.PrefixSetWidth(3, 10, "MAIN", "INIT")
 
 	var (
 		redis   *db.RedisHandle

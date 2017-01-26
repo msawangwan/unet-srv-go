@@ -18,24 +18,23 @@ func (c Context) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Prefix("context", "resource", "serveroute")
 
 	defer func() {
-		//c.PrefixError("context", "resource", "fatal")
 		c.Label(5, "context", "resource", "fatal")
-		c.SetLevelVerbose()
+		c.Level(5)
 
 		if err := recover(); err != nil {
 			c.Printf("caught a fatal error (panic)")
 			c.Printf("%v", err)
 		}
 
-		c.PrefixReset()
-		c.SetLevelDefault()
+		c.ClearLabel()
+		c.Level(0)
 	}()
 
 	c.Printf("calling handler mapped to: %s", r.URL.Path)
 
 	if e := c.Handle(c.Global, w, r); e != nil {
-		c.PrefixError("context", "resource", "error")
+		c.Label(5, "context", "resource", "error")
 		c.Printf("%s", e.Print())
-		c.PrefixReset()
+		c.ClearLabel()
 	}
 }
