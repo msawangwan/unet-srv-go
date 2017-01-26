@@ -20,7 +20,7 @@ func TestPrintSomeConstants(t *testing.T) {
 func TestJustSeeIfWeCanGenerateSomeRandomNumbers(t *testing.T) {
 	t.Log("create a prng instance...")
 
-	r := New(0)
+	r := New(test_seed)
 
 	t.Log("generate a random uint64: ", r.lcg())
 	t.Log("generate a random int: ", r.Intn(5))
@@ -172,6 +172,26 @@ func TestTrigOnUnitCircle(t *testing.T) {
 	for i.i = 0; i.i < i.times; i.i++ {
 		x, y = r.InUnitCircle()
 		t.Logf("random point inside unit circle: <%f, %f>", x, y)
+	}
+
+	t.Log("test complete")
+}
+
+func TestHitCounter(t *testing.T) {
+	r := New(test_seed)
+	i := &iteration{i: 0, times: 100}
+
+	for i.i = 0; i.i < i.times; i.i++ {
+		r.lcg()
+	}
+
+	count := r.GetNumberOfValuesGenerated()
+	times := i.times
+
+	if count == times {
+		t.Logf("generated [%d] which matches [%d]", count, times)
+	} else {
+		t.Errorf("mismatch")
 	}
 
 	t.Log("test complete")

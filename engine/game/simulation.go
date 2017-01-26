@@ -4,13 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	//"strings"
 	"sync"
 	"time"
 
 	"github.com/mediocregopher/radix.v2/pool"
 	"github.com/mediocregopher/radix.v2/redis"
+
 	"github.com/msawangwan/unet-srv-go/debug"
+	"github.com/msawangwan/unet-srv-go/engine/prng"
 )
 
 type Simulation struct {
@@ -37,6 +38,8 @@ type Simulation struct {
 	gameslots   [10]string
 
 	putconsole func(stdout string)
+
+	numbers *prng.Instance
 
 	*pool.Pool
 	*debug.Log
