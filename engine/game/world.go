@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/msawangwan/unet-srv-go/engine/prng"
 	"github.com/msawangwan/unet-srv-go/engine/quadrant"
 
 	"github.com/mediocregopher/radix.v2/pool"
@@ -40,7 +41,8 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 
 	seed := *seedp
 
-	world := quadrant.New(nNodes, nRad, seed)
+	//world := quadrant.New(nNodes, nRad, seed)
+	world := quadrant.New(nNodes, nRad, prng.New(seed)) // TODO: consider...
 	world.Partition(scale, maxA)
 
 	l.Prefix("game", "world", "load")
@@ -92,6 +94,8 @@ func GetWorldSeed(gamelookupstr string, p *pool.Pool) (*int64, error) {
 	return &ws, nil
 }
 
+// WorldParameters wraps values that map to redis fields: node_count,
+// max_spawn_attempts, world_scale, node_radius, world_seed
 type WorldParameters struct {
 	NodeCount        int     `json:"nodeCount"`
 	NodeSpawnAttempt int     `json:"nodeMaxSpawnAttempts"`
@@ -103,7 +107,6 @@ type WorldParameters struct {
 func GetWorldParameters(gameid int, p *pool.Pool, l *debug.Log) (*WorldParameters, error) {
 	var params *WorldParameters = &WorldParameters{}
 
-	// fields: node_count, world_scale, node_radius, max_spawn_attempts, world_seed
 	m, err := p.Cmd("HGETALL", GameParamString(GameLookupString(gameid))).Map()
 	if err != nil {
 		return nil, err

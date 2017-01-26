@@ -5,6 +5,7 @@ package quadrant
 
 import (
 	"fmt"
+
 	"github.com/msawangwan/unet-srv-go/engine/prng"
 )
 
@@ -161,7 +162,8 @@ type Tree struct {
 	*prng.Instance
 }
 
-func New(nodeCount int, nodeRadius float32, seed int64) *Tree {
+func New(nodeCount int, nodeRadius float32, rand *prng.Instance) *Tree {
+	//func New(nodeCount int, nodeRadius float32, seed int64) *Tree {
 	var (
 		ns   []*node
 		r, n *node
@@ -185,11 +187,12 @@ func New(nodeCount int, nodeRadius float32, seed int64) *Tree {
 	}
 
 	return &Tree{
-		Root:     r,
-		Nodes:    ns,
-		size:     size,
-		store:    s,
-		Instance: prng.New(seed), // TODO: pass in an instance instead
+		Root:  r,
+		Nodes: ns,
+		size:  size,
+		store: s,
+		//Instance: prng.New(seed), // TODO: pass in an instance instead
+		Instance: rand,
 	}
 }
 

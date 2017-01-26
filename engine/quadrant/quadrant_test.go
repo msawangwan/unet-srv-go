@@ -3,12 +3,18 @@ package quadrant
 import (
 	"fmt"
 	"testing"
+
+	"github.com/msawangwan/unet-srv-go/engine/prng"
 )
 
 const (
 	testSeed          = 1482284596187742126
 	testNodeRadius    = 1.2
 	testQuadrantScale = 50
+)
+
+var (
+	randgen = func() *prng.Instance { return prng.New(testSeed) }
 )
 
 func TestCreateNewTree(t *testing.T) {
@@ -19,7 +25,8 @@ func TestCreateNewTree(t *testing.T) {
 		nodeRadius float32 = 0.5
 	)
 
-	qt := New(nodeCount, nodeRadius, testSeed)
+	rand := randgen()
+	qt := New(nodeCount, nodeRadius, rand)
 
 	for i, node := range qt.Nodes {
 		t.Logf("range over empty child slot %d [%s] ...", i, node)
@@ -39,7 +46,8 @@ func TestSubdividerImplementation(t *testing.T) {
 
 	t.Log("test seed:", testSeed)
 
-	qt := New(numNodes, nodeRadius, testSeed)
+	rand := randgen()
+	qt := New(numNodes, nodeRadius, rand)
 
 	qt.Partition(scale, 20)
 
@@ -57,7 +65,8 @@ func TestSubdividerImplementation(t *testing.T) {
 func TestConvertNodeToRedisKey(t *testing.T) {
 	t.Log("convert the x and y values of a node into a redis key ...")
 
-	qt := New(9, testNodeRadius, testSeed)
+	rand := randgen()
+	qt := New(9, testNodeRadius, rand)
 	qt.Partition(testQuadrantScale, 20)
 
 	for _, n := range qt.Nodes {
