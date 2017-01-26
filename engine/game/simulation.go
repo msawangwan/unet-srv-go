@@ -50,7 +50,15 @@ func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Lo
 		maxplayerspergame = 2 // TODO: load from config.json or params.json
 	)
 
-	worldseed, err := GetWorldSeed(lookupstr, p)
+	l.Label(1, "game", "newsimulation")
+	defer l.PrefixReset()
+
+	l.Printf("instantiating a new simulation ...")
+
+	worldseed, err := GetWorldSeed(lookupstr, p, l)
+	if err != nil {
+		return nil, err
+	}
 
 	rand, err := prng.NewInstanceManager(maxplayerspergame, *worldseed)
 	if err != nil {

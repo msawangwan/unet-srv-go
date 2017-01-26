@@ -34,7 +34,7 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 	gameparamstr := GameParamString(gamelookupstr)
 	gamevalidnodememberstr := GameValidNodeString(gamelookupstr)
 
-	seedp, err := GetWorldSeed(gamelookupstr, p)
+	seedp, err := GetWorldSeed(gamelookupstr, p, l)
 	if err != nil {
 		return err
 	}
@@ -42,7 +42,8 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 	seed := *seedp
 
 	//world := quadrant.New(nNodes, nRad, seed)
-	world := quadrant.New(nNodes, nRad, prng.New(seed)) // TODO: consider...
+	rand := prng.New(seed)
+	world := quadrant.New(nNodes, nRad, rand) // TODO: consider...
 	world.Partition(scale, maxA)
 
 	l.Prefix("game", "world", "load")
@@ -82,15 +83,20 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 }
 
 // GetWorldSeed hits the redis db and returns the world seed given a game string
-func GetWorldSeed(gamelookupstr string, p *pool.Pool) (*int64, error) {
-	ss, e := p.Cmd("HGET", gamelookupstr, "world_seed").Str()
+func GetWorldSeed(gamelookupstr string, p *pool.Pool, l *debug.Log) (*int64, error) {
+	l.Label(1, "game", "world")
+	l.PrefixReset()
+	l.Printf("fetching string for [lookup string (key): %s]", gamelookupstr)
+	ss, e := p.Cmd("HGET", GameParamString(gamelookupstr), "world_seed").Str()
 	if e != nil {
 		return nil, e
 	}
+	l.Printf("stored seed [%s]", ss)
 	ws, e := strconv.ParseInt(ss, 10, 64)
 	if e != nil {
 		return nil, e
 	}
+	l.Printf("converted seed [%d]", ws)
 	return &ws, nil
 }
 
