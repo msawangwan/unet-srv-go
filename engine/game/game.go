@@ -10,6 +10,8 @@ import (
 	"github.com/msawangwan/unet-srv-go/debug"
 )
 
+type RedisKey string
+
 // the main key -- converts a game id into a redis string
 func GameLookupString(gameid int) string {
 	return fmt.Sprintf("%s:%d", "game", gameid)
