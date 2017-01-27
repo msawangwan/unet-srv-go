@@ -76,6 +76,11 @@ func (in *Instance) InRange(min, max float32) float32 {
 	return (float32(in.Intn(int(max)-int(min))) + min) * in.Float32()
 }
 
+// InRangeInt returns an int in the range of (min, max]
+func (in *Instance) InRangeInt(min, max int) int {
+	return in.Intn(max-min) + min
+}
+
 func (in *Instance) Intn(max int) int {
 	if max == 0 {
 		return 0

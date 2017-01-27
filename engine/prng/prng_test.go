@@ -196,3 +196,23 @@ func TestHitCounter(t *testing.T) {
 
 	t.Log("test complete")
 }
+
+func TestIntInRange(t *testing.T) {
+	t.Log("test int in range")
+
+	var min, max int = -10, 10
+
+	r := New(test_seed)
+	i := &iteration{i: 0, times: 100}
+
+	for i.i = 0; i.i < i.times; i.i++ {
+		randint := r.InRangeInt(min, max)
+		if randint >= min && randint < max {
+			t.Logf("int in range [%d]", randint)
+		} else {
+			t.Errorf("int out of range [%d]", randint)
+		}
+	}
+
+	t.Logf("test completed")
+}

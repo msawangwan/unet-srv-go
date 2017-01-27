@@ -13,7 +13,11 @@ type properties struct {
 }
 
 func generateNodeProperties() (*properties, error) {
-	return &properties{}, nil
+	var (
+		p *properties
+	)
+
+	return &p, nil
 }
 
 type state struct {
@@ -23,7 +27,7 @@ type state struct {
 	Occupant int
 }
 
-func initiNodeState() (*state, error) {
+func initNodeState() (*state, error) {
 	return &state{
 		Valid:    true,
 		IsHQ:     false,
@@ -44,6 +48,16 @@ type WorldPositionNode struct {
 }
 
 func NewWorldPositionNode(key RedisKey, uniqueKey RedisKey, x float32, y float32) (*WorldPositionNode, error) {
+	p, e := generateNodeProperties()
+	if e != nil {
+		return nil, e
+	}
+
+	s, e := initNodeState()
+	if e != nil {
+		return nil, e
+	}
+
 	wpn := &WorldPositionNode{
 		Key:       key,
 		UniqueKey: uniqueKey,
@@ -51,8 +65,8 @@ func NewWorldPositionNode(key RedisKey, uniqueKey RedisKey, x float32, y float32
 		X: x,
 		Y: y,
 
-		properties: generateNodeProperties(),
-		state:      initNodeState(),
+		properties: p,
+		state:      s,
 	}
 
 	return wpn, nil
