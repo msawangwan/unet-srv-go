@@ -32,16 +32,15 @@ func (ng *NameGenerator) GenerateHyphenatedName() string {
 	const length = 6
 
 	var (
-		buf      []byte
-		name     string
-		isUnique bool
+		name string
+		buf  []byte
 	)
 
-	for !isUnique {
-		hyIndex := ng.InRangeInt(1, 5)
-		n := ng.InRangeInt(0, 5) // number of digits
+	for {
+		hyIndex := ng.InRangeInt(1, 5) // where is the hyphen in the name
+		n := ng.InRangeInt(0, 5)       // total number of numbers in the name
 
-		digits := 0
+		digits := 0       // numbers generated so far
 		digitOrChar := -1 // 0 means random num, any other value means random letter
 
 		buf = make([]byte, length)
@@ -73,5 +72,6 @@ func (ng *NameGenerator) GenerateHyphenatedName() string {
 			break
 		}
 	}
+
 	return name
 }

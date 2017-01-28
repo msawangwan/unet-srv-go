@@ -22,6 +22,8 @@ type Global struct {
 
 	Games        *game.Table
 	KeyManager   *manager.KeyGenerator
+	NameManager  *manager.NameGenerator
+	LoreManager  *manager.LoreGenerator
 	EventEmitter *event.Emitter
 
 	GlobalError chan error
@@ -46,6 +48,11 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 	kgen, err := manager.NewKeyGenerator(redis.Pool, log)
 	checkErr(err, log)
 
+	namegen, err := manager.NewNameGenerator()
+	checkErr(err, log)
+
+	loregen, err := manager.NewLoreGenerator("lore.json", nil) // TODO: add this path to the config file
+
 	emitter, err := event.NewEmitter(redis.Pool, log)
 	checkErr(err, log)
 
@@ -57,6 +64,8 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 
 		Games:        games,
 		KeyManager:   kgen,
+		NameManager:  namegen,
+		LoreManager:  loregen,
 		EventEmitter: emitter,
 
 		GlobalError: errc,

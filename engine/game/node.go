@@ -1,7 +1,6 @@
 package game
 
-//	"github.com/msawangwan/unet-srv-go/adt"
-// TODO: keep a list of names
+import "github.com/msawangwan/unet-srv-go/engine/manager"
 
 type properties struct {
 	Name          string
@@ -12,12 +11,14 @@ type properties struct {
 	AttackPenalty int
 }
 
-func generateNodeProperties() (*properties, error) {
+func generateNodeProperties(ng *manager.NameGenerator) (*properties, error) {
 	var (
 		p *properties
 	)
 
-	return &p, nil
+	p.Name = ng.GenerateHyphenatedName()
+
+	return p, nil
 }
 
 type state struct {
@@ -45,10 +46,12 @@ type WorldPositionNode struct {
 
 	*properties
 	*state
+
+	*manager.NameGenerator
 }
 
-func NewWorldPositionNode(key RedisKey, uniqueKey RedisKey, x float32, y float32) (*WorldPositionNode, error) {
-	p, e := generateNodeProperties()
+func NewWorldPositionNode(key RedisKey, uniqueKey RedisKey, x float32, y float32, ng *manager.NameGenerator) (*WorldPositionNode, error) {
+	p, e := generateNodeProperties(ng)
 	if e != nil {
 		return nil, e
 	}
