@@ -82,6 +82,14 @@ func LoadWorld(ch *manager.ContentHandler, gameid int, nNodes int, scale float32
 				"node_x", nn.X,
 				"node_y", nn.Y,
 				"node_ishq", "false",
+				"node_isoccupied", "false",
+				"node_occupant", -1,
+				"node_name", nn.Name,
+				"node_info", nn.Info,
+				"node_cap", nn.Capacity,
+				"node_deploy_cost", nn.DeployCost,
+				"node_move_cost", nn.MoveCost,
+				"node_atk_penalty", nn.AttackPenalty,
 			)
 
 			l.Printf("added a node: [%s]\n", noderedisstr)
