@@ -16,14 +16,15 @@ import (
 // Global encapsulates global handlers
 type Global struct {
 	*config.GameParameters
+
 	*db.RedisHandle
 	*db.PostgreHandle
+
 	*debug.Log
 
 	Games        *game.Table
 	KeyManager   *manager.KeyGenerator
-	NameManager  *manager.NameGenerator
-	LoreManager  *manager.LoreGenerator
+	Content      *manager.ContentHandler
 	EventEmitter *event.Emitter
 
 	GlobalError chan error
@@ -34,7 +35,11 @@ type Global struct {
 
 // New returns a new instance of a global context object
 func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, redis *db.RedisHandle, pg *db.PostgreHandle, log *debug.Log) *Global {
-	checkErr := func(err error, log *debug.Log) {
+	var (
+		lorePath = "lore.json" // TODO: run from config
+	)
+
+	checkErr := func(err error) {
 		if err != nil {
 			defer log.PrefixReset()
 			log.Prefix("init", "error")
@@ -43,29 +48,28 @@ func New(maxSessionsPerHost int, errc chan error, param *config.GameParameters, 
 	}
 
 	games, err := game.NewTable(redis.Pool, log)
-	checkErr(err, log)
+	checkErr(err)
 
 	kgen, err := manager.NewKeyGenerator(redis.Pool, log)
-	checkErr(err, log)
+	checkErr(err)
 
-	namegen, err := manager.NewNameGenerator()
-	checkErr(err, log)
-
-	loregen, err := manager.NewLoreGenerator("lore.json", nil) // TODO: add this path to the config file
+	cm, err := manager.NewContentHandler(&lorePath)
+	checkErr(err)
 
 	emitter, err := event.NewEmitter(redis.Pool, log)
-	checkErr(err, log)
+	checkErr(err)
 
 	g := &Global{
 		GameParameters: param,
-		RedisHandle:    redis,
-		PostgreHandle:  pg,
-		Log:            log,
+
+		RedisHandle:   redis,
+		PostgreHandle: pg,
+
+		Log: log,
 
 		Games:        games,
 		KeyManager:   kgen,
-		NameManager:  namegen,
-		LoreManager:  loregen,
+		Content:      cm,
 		EventEmitter: emitter,
 
 		GlobalError: errc,

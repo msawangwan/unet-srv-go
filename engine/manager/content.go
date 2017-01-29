@@ -28,5 +28,6 @@ func NewContentHandler(filepath *string) (*ContentHandler, error) {
 		LoreGenerator: lg,
 		NameGenerator: ng,
 	}
+
 	return ch, nil
 }
