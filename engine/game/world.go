@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/msawangwan/unet-srv-go/engine/manager"
 	"github.com/msawangwan/unet-srv-go/engine/prng"
 	"github.com/msawangwan/unet-srv-go/engine/quadrant"
 
@@ -19,7 +20,7 @@ func GameNodeStatString(gamelookupstr, nodestr string) string {
 	return fmt.Sprintf("%s:%s", gamelookupstr, nodestr)
 }
 
-func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p *pool.Pool, l *debug.Log) error {
+func LoadWorld(ch *manager.ContentHandler, gameid int, nNodes int, scale float32, nRad float32, maxA int, p *pool.Pool, l *debug.Log) error {
 	conn, err := p.Get()
 	if err != nil {
 		return err
@@ -27,7 +28,7 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 
 	defer func() {
 		p.Put(conn)
-		l.PrefixReset()
+		l.ClearLabel()
 	}()
 
 	gamelookupstr := GameLookupString(gameid)
@@ -51,6 +52,11 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 	noderadstr := strconv.FormatFloat(float64(nRad), 'f', -1, 32)
 	worldscalestr := strconv.FormatFloat(float64(scale), 'f', -1, 32)
 
+	gamedata, err := NewData(ch)
+	if err != nil {
+		return err
+	}
+
 	if err = conn.Cmd("MULTI").Err; err != nil {
 		return err
 	}
@@ -59,16 +65,26 @@ func LoadWorld(gameid int, nNodes int, scale float32, nRad float32, maxA int, p 
 		if !n.IsAttachedToTree() {
 			l.Printf("error, detached node [%s]", n.String())
 		} else {
-			x, y := n.FormatComponents()
+			x, y := n.Position()
 
-			nodevalidstr := n.AsRedisKey()
-			nodestatstr := GameNodeStatString(gamelookupstr, nodevalidstr)
+			noderedisstr := n.AsRedisKey()
+			nodelookupstr := GameNodeStatString(gamelookupstr, noderedisstr)
 
-			// TODO: create a struct to wrap a node
-			conn.Cmd("SADD", gamevalidnodememberstr, nodevalidstr)
-			conn.Cmd("HMSET", nodestatstr, "node_key", nodevalidstr, "node_x", x, "node_y", y, "node_ishq", "false") // create a hashtable for EACH node
+			nn, e := NewWorldPositionNode(RedisKey(nodelookupstr), RedisKey(noderedisstr), x, y, gamedata)
+			if e != nil {
+				l.Printf("an error occured when creating a new world position node: %s", e)
+			}
 
-			l.Printf("adding a node: [%s]\n", nodevalidstr)
+			conn.Cmd("SADD", gamevalidnodememberstr, noderedisstr)
+			conn.Cmd(
+				"HMSET", nn.GetLookupKey(),
+				"node_key", nn.GetPositionKey(),
+				"node_x", nn.X,
+				"node_y", nn.Y,
+				"node_ishq", "false",
+			)
+
+			l.Printf("added a node: [%s]\n", noderedisstr)
 		}
 	}
 

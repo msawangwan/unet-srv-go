@@ -27,6 +27,7 @@ func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.
 	}
 
 	err = game.LoadWorld(
+		g.Content,
 		createreq.GameKey,
 		g.WorldNodeCount,
 		g.WorldScale,

@@ -1,7 +1,5 @@
 package game
 
-import "github.com/msawangwan/unet-srv-go/engine/manager"
-
 type properties struct {
 	Name          string
 	Info          string
@@ -11,13 +9,16 @@ type properties struct {
 	AttackPenalty int
 }
 
-func generateNodeProperties(ng *manager.NameGenerator) (*properties, error) {
-	var (
-		p *properties
-	)
+func generateNodeProperties(d *Data) (*properties, error) {
+	info, e := d.Manager.Random()
+	if e != nil {
+		return nil, e
+	}
 
-	p.Name = ng.GenerateHyphenatedName()
-	//p.Info = ng.GenerateInfo()
+	p := &properties{}
+
+	p.Name = d.Manager.GenerateHyphenatedName()
+	p.Info = *info
 	p.Capacity = 1
 	p.DeployCost = 1
 	p.MoveCost = 1
@@ -43,20 +44,18 @@ func initNodeState() (*state, error) {
 }
 
 type WorldPositionNode struct {
-	Key       RedisKey
-	UniqueKey RedisKey
+	LookupKey   RedisKey
+	PositionKey RedisKey
 
 	X float32
 	Y float32
 
 	*properties
 	*state
-
-	*manager.NameGenerator
 }
 
-func NewWorldPositionNode(key RedisKey, uniqueKey RedisKey, x float32, y float32, ng *manager.NameGenerator) (*WorldPositionNode, error) {
-	p, e := generateNodeProperties(ng)
+func NewWorldPositionNode(lk RedisKey, pk RedisKey, x float32, y float32, d *Data) (*WorldPositionNode, error) {
+	p, e := generateNodeProperties(d)
 	if e != nil {
 		return nil, e
 	}
@@ -67,8 +66,8 @@ func NewWorldPositionNode(key RedisKey, uniqueKey RedisKey, x float32, y float32
 	}
 
 	wpn := &WorldPositionNode{
-		Key:       key,
-		UniqueKey: uniqueKey,
+		LookupKey:   lk,
+		PositionKey: pk,
 
 		X: x,
 		Y: y,
@@ -79,3 +78,6 @@ func NewWorldPositionNode(key RedisKey, uniqueKey RedisKey, x float32, y float32
 
 	return wpn, nil
 }
+
+func (wpn *WorldPositionNode) GetLookupKey() string   { return string(wpn.LookupKey) }
+func (wpn *WorldPositionNode) GetPositionKey() string { return string(wpn.PositionKey) }

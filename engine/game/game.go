@@ -99,7 +99,7 @@ func Join(gameid int, playerid int, playername string, p *pool.Pool, l *debug.Lo
 
 	defer func() {
 		p.Put(conn)
-		l.PrefixReset()
+		l.ClearLabel()
 	}()
 
 	ismem, err := conn.Cmd("SISMEMBER", gameplayerliststring, playername).Int()
@@ -124,7 +124,7 @@ func Join(gameid int, playerid int, playername string, p *pool.Pool, l *debug.Lo
 		return nil, err
 	}
 
-	l.Prefix("game", "join")
+	l.Label(3, "game", "join")
 	l.Printf("printing player list ...")
 
 	for i, player := range allplayers {
