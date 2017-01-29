@@ -3,7 +3,7 @@ package manager
 import "testing"
 
 func TestGenerateOneName(t *testing.T) {
-	t.Log("lets print some names")
+	t.Log("lets print a single name")
 
 	ng, e := NewNameGenerator()
 	if e != nil {

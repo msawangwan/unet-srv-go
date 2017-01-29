@@ -4,7 +4,7 @@ import "github.com/msawangwan/unet-srv-go/engine/manager"
 
 type properties struct {
 	Name          string
-	info          string
+	Info          string
 	Capacity      int
 	DeployCost    int
 	MoveCost      int
@@ -17,6 +17,11 @@ func generateNodeProperties(ng *manager.NameGenerator) (*properties, error) {
 	)
 
 	p.Name = ng.GenerateHyphenatedName()
+	//p.Info = ng.GenerateInfo()
+	p.Capacity = 1
+	p.DeployCost = 1
+	p.MoveCost = 1
+	p.AttackPenalty = 1
 
 	return p, nil
 }
