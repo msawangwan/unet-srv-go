@@ -83,6 +83,11 @@ func NewRouteTable(globals *env.Global) *Table {
 				Pattern: cache("game/world/player/hq/validation"),
 				Handler: resource.Context{globals, handler.ValidateHQChoice},
 			},
+			"game/world/node/data": &route{
+				Method:  "POST",
+				Pattern: cache("game/world/node/data"),
+				Handler: resource.Context{globals, handler.GetNodeAndCacheData},
+			},
 			"game/turn/poll": &route{
 				Method:  "POST",
 				Pattern: cache("game/turn/poll"),

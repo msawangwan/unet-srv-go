@@ -1,21 +1,21 @@
 package game
 
-type properties struct {
-	Name          string
-	Info          string
-	Capacity      int
-	DeployCost    int
-	MoveCost      int
-	AttackPenalty int
+type WorldNodeProperties struct {
+	Name          string `json:"name"`
+	Info          string `json:"info"`
+	Capacity      int    `json:"capacity"`
+	DeployCost    int    `json:"deployCost"`
+	MoveCost      int    `json:"moveCost"`
+	AttackPenalty int    `json:"attackPenalty"`
 }
 
-func generateNodeProperties(d *Data) (*properties, error) {
+func generateNodeProperties(d *Data) (*WorldNodeProperties, error) {
 	info, e := d.Manager.Random()
 	if e != nil {
 		return nil, e
 	}
 
-	p := &properties{}
+	p := &WorldNodeProperties{}
 
 	p.Name = d.Manager.GenerateHyphenatedName()
 	p.Info = *info
@@ -27,34 +27,40 @@ func generateNodeProperties(d *Data) (*properties, error) {
 	return p, nil
 }
 
-type state struct {
-	Valid    bool
-	IsHQ     bool
-	Occupied bool
-	Occupant int
+type WorldNodeState struct {
+	IsHQ     bool `json:"isHQ"`
+	Occupied bool `json:"occupied"`
+	Occupant int  `json:"occupant"`
 }
 
-func initNodeState() (*state, error) {
-	return &state{
-		Valid:    true,
+func initNodeState() (*WorldNodeState, error) {
+	return &WorldNodeState{
 		IsHQ:     false,
 		Occupied: false,
 		Occupant: -1,
 	}, nil
 }
 
-type WorldPositionNode struct {
+type WorldNodeData struct {
+	*WorldNodeProperties `json:"properties"`
+	*WorldNodeState      `json:"state"`
+}
+
+func NewWorldNodeData() *WorldNodeData {
+	return &WorldNodeData{&WorldNodeProperties{}, &WorldNodeState{}}
+}
+
+type WorldNode struct {
 	LookupKey   RedisKey
 	PositionKey RedisKey
 
 	X float32
 	Y float32
 
-	*properties
-	*state
+	*WorldNodeData
 }
 
-func NewWorldPositionNode(lk RedisKey, pk RedisKey, x float32, y float32, d *Data) (*WorldPositionNode, error) {
+func NewWorldNode(lk RedisKey, pk RedisKey, x float32, y float32, d *Data) (*WorldNode, error) {
 	p, e := generateNodeProperties(d)
 	if e != nil {
 		return nil, e
@@ -65,19 +71,21 @@ func NewWorldPositionNode(lk RedisKey, pk RedisKey, x float32, y float32, d *Dat
 		return nil, e
 	}
 
-	wpn := &WorldPositionNode{
+	wn := &WorldNode{
 		LookupKey:   lk,
 		PositionKey: pk,
 
 		X: x,
 		Y: y,
 
-		properties: p,
-		state:      s,
+		WorldNodeData: &WorldNodeData{
+			WorldNodeProperties: p,
+			WorldNodeState:      s,
+		},
 	}
 
-	return wpn, nil
+	return wn, nil
 }
 
-func (wpn *WorldPositionNode) GetLookupKey() string   { return string(wpn.LookupKey) }
-func (wpn *WorldPositionNode) GetPositionKey() string { return string(wpn.PositionKey) }
+func (wn *WorldNode) GetLookupKey() string   { return string(wn.LookupKey) }
+func (wn *WorldNode) GetPositionKey() string { return string(wn.PositionKey) }

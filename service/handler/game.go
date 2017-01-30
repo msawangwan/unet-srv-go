@@ -10,6 +10,8 @@ import (
 	"github.com/msawangwan/unet-srv-go/service/exception"
 )
 
+var labeldebug = func(globals *env.Global) { globals.Label(3, "handler", "game") }
+
 type CreateWorldRequest struct {
 	GameKey  int    `json:"key"`
 	GameName string `json:"value"`
@@ -40,8 +42,10 @@ func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.
 		return raiseServerError(err)
 	}
 
-	defer g.PrefixReset()
-	g.Prefix("handler", "game", "loadworld")
+	//	defer g.PrefixReset()
+	//	g.Prefix("handler", "game", "loadworld")
+	labeldebug(g)
+	defer g.ClearLabel()
 	g.Printf("loaded game world [gamekey: %d]", createreq.GameKey)
 
 	err = session.PostGameToLobby(createreq.GameKey, createreq.GameName, g.Pool, g.Log)
@@ -98,7 +102,7 @@ func JoinGameWorld(g *env.Global, w http.ResponseWriter, r *http.Request) except
 	return nil
 }
 
-type CheckNodeHQRequest struct {
+type CheckNodeHQRequest struct { // TODO: this is a duplicate
 	GameID      int    `json:"gameID"`
 	PlayerIndex int    `json:"playerIndex"`
 	NodeString  string `json:"nodeString"`
@@ -135,6 +139,54 @@ func ValidateHQChoice(g *env.Global, w http.ResponseWriter, r *http.Request) exc
 			Value: isHQValid,
 		},
 	)
+
+	return nil
+}
+
+type nodeRequest struct { // TODO: refactor into one, this is duplicated by another struct (see above)
+	GameID        int    `json:"gameID"`
+	PlayerIndex   int    `json:"playerIndex"`
+	NodekeyString string `json:"nodekeyString"`
+}
+
+// game/world/node/data
+func GetNodeAndCacheData(g *env.Global, w http.ResponseWriter, r *http.Request) exception.Handler {
+	var (
+		nr *nodeRequest
+	)
+
+	e := json.NewDecoder(r.Body).Decode(&nr)
+	if e != nil {
+		return raiseServerError(e)
+	}
+
+	sim, e := g.Games.Get(game.GameLookupString((nr.GameID)))
+	if e != nil {
+		return raiseServerError(e)
+	}
+
+	labeldebug(g)
+	defer g.ClearLabel()
+	g.Printf("fetching requested node for caching ... [%s]", nr.NodekeyString)
+
+	c := sim.FetchNodeData(nr.NodekeyString)
+
+	select {
+	case nd := <-c:
+		labeldebug(g)
+		g.Printf("got data [%s], sending it back to [player index: %d]", nr.NodekeyString, nr.PlayerIndex)
+		json.NewEncoder(w).Encode(
+			struct {
+				game.WorldNodeState      `json:"state"`
+				game.WorldNodeProperties `json:"properties"`
+			}{
+				WorldNodeState:      *nd.WorldNodeState,
+				WorldNodeProperties: *nd.WorldNodeProperties,
+			},
+		)
+	case e = <-sim.NotifyError:
+		return raiseServerError(e)
+	}
 
 	return nil
 }

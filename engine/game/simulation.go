@@ -50,9 +50,8 @@ func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Lo
 		maxplayerspergame = 2 // TODO: load from config.json or params.json
 	)
 
+	defer l.ClearLabel()
 	l.Label(1, "game", "newsimulation")
-	defer l.PrefixReset()
-
 	l.Printf("instantiating a new simulation ...")
 
 	worldseed, err := GetWorldSeed(lookupstr, p, l)
@@ -93,9 +92,11 @@ func NewSimulation(gametable *Table, lookupstr string, p *pool.Pool, l *debug.Lo
 	}
 
 	putconsole := func(msg string) {
-		sim.Prefix("simulation", sim.lookupstr)
+		sim.Label(2, "simulation", sim.lookupstr)
+		//		sim.Prefix("simulation", sim.lookupstr)
 		sim.Printf("[%s] %s", sim.lookupstr, msg)
-		sim.PrefixReset()
+		sim.ClearLabel()
+		//		sim.PrefixReset()
 	}
 
 	sim.putconsole = putconsole
@@ -311,6 +312,27 @@ func (s *Simulation) CheckNodeValidHQ(playerindex int, nodestr string) chan bool
 	return sendvalid
 }
 
+func (s *Simulation) FetchNodeData(nodekeystring string) chan *WorldNodeData {
+	wndc := make(chan *WorldNodeData)
+
+	s.putconsole(fmt.Sprintf("fetching node data ... [%s]", nodekeystring))
+
+	go func() {
+		wnd, e := GetNodeData(s.lookupstr, nodekeystring, s.Pool, s.Log)
+		if e != nil {
+			s.putconsole("eek got an error")
+			s.NotifyError <- e
+		} else {
+			s.putconsole("got the data")
+			wndc <- wnd
+		}
+		close(wndc)
+		return
+	}()
+
+	return wndc
+}
+
 type Table struct {
 	active map[string]*Simulation
 
@@ -333,10 +355,12 @@ func (t *Table) Add(key string) (*Simulation, error) {
 	t.Lock()
 	defer func() {
 		t.Unlock()
-		t.PrefixReset()
+		t.ClearLabel()
+		//t.PrefixReset()
 	}()
 
-	t.Prefix("game", "simulation")
+	//	t.Prefix("game", "simulation")
+	t.Label(4, "game", "simulation")
 	t.Printf("adding new simulation [gamelookupstring: %s]", key)
 
 	_, exists := t.active[key]
@@ -358,10 +382,12 @@ func (t *Table) Get(key string) (*Simulation, error) {
 	t.Lock()
 	defer func() {
 		t.Unlock()
-		t.PrefixReset()
+		t.ClearLabel()
+		//		t.PrefixReset()
 	}()
 
-	t.Prefix("game", "simulation")
+	//	t.Prefix("game", "simulation")
+	t.Label(4, "game", "simulation")
 	t.Printf("accessing simulation [gamelookupstring: %s]", key)
 
 	_, exists := t.active[key]

@@ -70,7 +70,7 @@ func LoadWorld(ch *manager.ContentHandler, gameid int, nNodes int, scale float32
 			noderedisstr := n.AsRedisKey()
 			nodelookupstr := GameNodeStatString(gamelookupstr, noderedisstr)
 
-			nn, e := NewWorldPositionNode(RedisKey(nodelookupstr), RedisKey(noderedisstr), x, y, gamedata)
+			nn, e := NewWorldNode(RedisKey(nodelookupstr), RedisKey(noderedisstr), x, y, gamedata)
 			if e != nil {
 				l.Printf("an error occured when creating a new world position node: %s", e)
 			}
@@ -131,6 +131,7 @@ type WorldParameters struct {
 	Seed             int64   `json:"worldSeed"`
 }
 
+// GetWorldParameters fetches game params and retuns a struct for json encoding
 func GetWorldParameters(gameid int, p *pool.Pool, l *debug.Log) (*WorldParameters, error) {
 	var params *WorldParameters = &WorldParameters{}
 
@@ -169,4 +170,53 @@ func GetWorldParameters(gameid int, p *pool.Pool, l *debug.Log) (*WorldParameter
 	}
 
 	return params, nil
+}
+
+func GetNodeData(gamelookupstr string, gamenodestr string, p *pool.Pool, l *debug.Log) (*WorldNodeData, error) {
+	var data *WorldNodeData = NewWorldNodeData()
+
+	m, e := p.Cmd("HGETALL", GameNodeStatString(gamelookupstr, gamenodestr)).Map()
+	if e != nil {
+		return nil, e
+	}
+
+	data.IsHQ, e = strconv.ParseBool(m["node_ishq"])
+	if e != nil {
+		return nil, e
+	}
+
+	data.Occupied, e = strconv.ParseBool(m["node_isoccupied"])
+	if e != nil {
+		return nil, e
+	}
+
+	data.Occupant, e = strconv.Atoi(m["node_occupant"])
+	if e != nil {
+		return nil, e
+	}
+
+	data.Name = m["node_name"]
+	data.Info = m["node_info"]
+
+	data.Capacity, e = strconv.Atoi(m["node_cap"])
+	if e != nil {
+		return nil, e
+	}
+
+	data.DeployCost, e = strconv.Atoi(m["node_deploy_cost"])
+	if e != nil {
+		return nil, e
+	}
+
+	data.MoveCost, e = strconv.Atoi(m["node_move_cost"])
+	if e != nil {
+		return nil, e
+	}
+
+	data.AttackPenalty, e = strconv.Atoi(m["node_atk_penalty"])
+	if e != nil {
+		return nil, e
+	}
+
+	return data, nil
 }
