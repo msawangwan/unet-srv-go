@@ -42,8 +42,6 @@ func LoadWorld(g *env.Global, w http.ResponseWriter, r *http.Request) exception.
 		return raiseServerError(err)
 	}
 
-	//	defer g.PrefixReset()
-	//	g.Prefix("handler", "game", "loadworld")
 	labeldebug(g)
 	defer g.ClearLabel()
 	g.Printf("loaded game world [gamekey: %d]", createreq.GameKey)
